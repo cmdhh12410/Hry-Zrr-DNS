@@ -1,0 +1,23 @@
+{
+  "name": "dns-distribution-system",
+  "version": "3.0.0",
+  "description": "DNS Distribution System on Cloudflare Workers with D1 and KV",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute dns-db --file=./migrations/0001_initial.sql",
+    "db:local": "wrangler d1 execute dns-db --local --file=./migrations/0001_initial.sql",
+    "db:seed": "wrangler d1 execute dns-db --file=./migrations/0002_seed.sql"
+  },
+  "dependencies": {
+    "jose": "^5.2.0",
+    "bcryptjs": "^2.4.3",
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240101.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.22.0"
+  }
+}

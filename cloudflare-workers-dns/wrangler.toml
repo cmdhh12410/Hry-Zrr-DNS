@@ -1,0 +1,45 @@
+name = "dns-distribution-system"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers KV 命名空间 - 用于会话、缓存、配置
+kv_namespaces = [
+  { binding = "KV", id = "KV_ID_PLACEHOLDER", preview_id = "KV_PREVIEW_ID_PLACEHOLDER" }
+]
+
+# D1 数据库
+d1_databases = [
+  { binding = "DB", database_name = "dns-db", database_id = "D1_ID_PLACEHOLDER" }
+]
+
+# 环境变量
+[vars]
+APP_NAME = "六趣DNS"
+APP_VERSION = "3.0.0"
+DEFAULT_MAX_DOMAINS = "5"
+JWT_ACCESS_TOKEN_EXPIRES = "86400"
+BCRYPT_SALT_ROUNDS = "10"
+
+# 定时任务 (Cron Triggers)
+[triggers]
+crons = [
+  "check_domain_expiry",
+  "auto_renew_domains",
+  "check_idle_domains",
+  "daily_reset_email_limits",
+  "cleanup_expired_tokens"
+]
+
+# 自定义域名路由 (可选)
+# [[routes]]
+# pattern = "your-domain.com/*"
+# zone_name = "your-domain.com"
+
+# 开发环境
+[env.dev]
+name = "dns-distribution-system-dev"
+
+# 生产环境
+[env.production]
+name = "dns-distribution-system-prod"
