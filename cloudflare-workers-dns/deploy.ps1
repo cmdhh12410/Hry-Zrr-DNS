@@ -216,69 +216,45 @@ if ($d1Exists) {
 Write-Host "  Database ID: $d1Id" -ForegroundColor Yellow
 
 Write-Host "  -> Creating KV namespace..."
-$kvExists = $false
 $kvId = $null
-try {
-    $kvRawJson = npx wrangler kv:namespace list 2>&1
-    $kvJson = ($kvRawJson | Where-Object { $_ -match '^\s*\[' -or $_ -match '^\s*\{' -or $_ -match '^\s*"' -or $_ -match '^\s*\]' -or $_ -match '^\s*\}' -or $_ -match '^\s*,' } | Out-String).Trim()
-    try {
-        $kvData = $kvJson | ConvertFrom-Json
-        $kvNs = $kvData | Where-Object { $_.title -eq 'KV' -or $_.name -eq 'KV' -or $_.title -like '*-KV' -or $_.title -like '*dns-distribution*' }
-        if ($kvNs) {
-            $kvExists = $true
-            $kvId = $kvNs[0].id
-            if (-not $kvId) { $kvId = $kvNs.id }
+
+function Find-KvId {
+    $raw = npx wrangler kv:namespace list 2>&1 | Out-String
+    $lines = $raw -split "`n"
+    $lastId = $null
+    foreach ($line in $lines) {
+        if ($line -match '([a-f0-9]{32})') {
+            $lastId = $matches[1]
         }
-    } catch {
-        $kvList = $kvRawJson | Out-String
-        if ($kvList -match '"KV"' -or $kvList -match '-KV"') {
-            $kvExists = $true
+        if ($line -match 'dns-distribution-system-KV' -or $line -match '"KV"') {
+            if ($lastId) { return $lastId }
         }
     }
-} catch { }
+    if ($lastId) { return $lastId }
+    return $null
+}
 
-if ($kvExists -and $kvId) {
+$kvId = Find-KvId
+
+if ($kvId) {
     Write-Host "  SKIP KV namespace already exists" -ForegroundColor Yellow
-} elseif ($kvExists) {
-    Write-Host "  SKIP KV namespace already exists, extracting ID..." -ForegroundColor Yellow
-    try {
-        $kvRawJson = npx wrangler kv:namespace list 2>&1
-        $kvJson = ($kvRawJson | Where-Object { $_ -match '^\s*\[' -or $_ -match '^\s*\{' -or $_ -match '^\s*"' -or $_ -match '^\s*\]' -or $_ -match '^\s*\}' -or $_ -match '^\s*,' } | Out-String).Trim()
-        $kvData = $kvJson | ConvertFrom-Json
-        $kvNs = $kvData | Where-Object { $_.title -eq 'KV' -or $_.name -eq 'KV' -or $_.title -like '*-KV' -or $_.title -like '*dns-distribution*' }
-        if ($kvNs -and $kvNs[0].id) {
-            $kvId = $kvNs[0].id
-        } elseif ($kvNs -and $kvNs.id) {
-            $kvId = $kvNs.id
-        } else {
-            Write-Fail "KV namespace found but cannot extract ID"
-        }
-    } catch {
-        $kvRaw = npx wrangler kv:namespace list 2>&1 | Out-String
-        $lines = $kvRaw -split "`n"
+} else {
+    $kvOutput = npx wrangler kv:namespace create KV 2>&1 | Out-String
+    if ($kvOutput -match 'already exists') {
+        $kvId = Find-KvId
+    }
+    if (-not $kvId) {
+        $lines = $kvOutput -split "`n"
         foreach ($line in $lines) {
-            if ($line -match 'KV' -and $line -match '"([a-f0-9]{32,})"') {
+            if ($line -match 'id\s*=\s*"([^"]+)"') {
                 $kvId = $matches[1]
                 break
             }
         }
-        if (-not $kvId) {
-            Write-Host $kvRaw
-            Write-Fail "Cannot extract KV id. Output shown above."
-        }
-    }
-} else {
-    $kvOutput = npx wrangler kv:namespace create KV 2>&1 | Out-String
-    $lines = $kvOutput -split "`n"
-    foreach ($line in $lines) {
-        if ($line -match 'id\s*=\s*"([^"]+)"') {
-            $kvId = $matches[1]
-            break
-        }
     }
     if (-not $kvId) {
         foreach ($line in $lines) {
-            if ($line -match '"([a-f0-9]{32,})"') {
+            if ($line -match '([a-f0-9]{32})') {
                 $kvId = $matches[1]
                 break
             }
