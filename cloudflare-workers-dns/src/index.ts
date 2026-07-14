@@ -74,26 +74,26 @@ export default {
    * Cron 触发器处理
    */
   async scheduled(event: ScheduledEvent, env: Env): Promise<void> {
-    const cronType = event.cron;
+    const cronExpr = event.cron;
 
-    switch (cronType) {
-      case 'check_domain_expiry':
+    switch (cronExpr) {
+      case '0 8 * * *':
         await handleDomainExpiryCheck(env);
         break;
-      case 'auto_renew_domains':
+      case '0 2 * * *':
         await handleAutoRenew(env);
         break;
-      case 'check_idle_domains':
+      case '0 10 * * *':
         await handleIdleDomainCheck(env);
         break;
-      case 'daily_reset_email_limits':
+      case '0 0 * * *':
         await handleDailyReset(env);
         break;
-      case 'cleanup_expired_tokens':
+      case '0 4 * * *':
         await handleTokenCleanup(env);
         break;
       default:
-        console.log(`Unknown cron trigger: ${cronType}`);
+        console.log(`Unknown cron trigger: ${cronExpr}`);
     }
   },
 };
