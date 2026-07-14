@@ -167,7 +167,9 @@ if ($d1Exists) {
     Write-Host "  SKIP D1 database 'dns-db' already exists" -ForegroundColor Yellow
     $d1List = npx wrangler d1 list 2>&1 | Out-String
     # Try multiple regex patterns for different output formats
-    if ($d1List -match 'database_id\s*=\s*"([^"]+)"') {
+    if ($d1List -match '([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\s*[│|]\s*dns-db') {
+        $d1Id = $matches[1]
+    } elseif ($d1List -match 'database_id\s*=\s*"([^"]+)"') {
         $d1Id = $matches[1]
     } elseif ($d1List -match '"database_id"\s*:\s*"([^"]+)"') {
         $d1Id = $matches[1]
@@ -181,7 +183,9 @@ if ($d1Exists) {
     }
 } else {
     $d1Output = npx wrangler d1 create dns-db 2>&1 | Out-String
-    if ($d1Output -match 'database_id\s*=\s*"([^"]+)"') {
+    if ($d1Output -match '([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\s*[│|]\s*dns-db') {
+        $d1Id = $matches[1]
+    } elseif ($d1Output -match 'database_id\s*=\s*"([^"]+)"') {
         $d1Id = $matches[1]
     } elseif ($d1Output -match '"database_id"\s*:\s*"([^"]+)"') {
         $d1Id = $matches[1]
