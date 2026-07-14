@@ -165,35 +165,49 @@ try {
 
 if ($d1Exists) {
     Write-Host "  SKIP D1 database 'dns-db' already exists" -ForegroundColor Yellow
-    $d1List = npx wrangler d1 list 2>&1 | Out-String
-    # Try multiple regex patterns for different output formats
-    if ($d1List -match '([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\s*[│|]\s*dns-db') {
-        $d1Id = $matches[1]
-    } elseif ($d1List -match 'database_id\s*=\s*"([^"]+)"') {
-        $d1Id = $matches[1]
-    } elseif ($d1List -match '"database_id"\s*:\s*"([^"]+)"') {
-        $d1Id = $matches[1]
-    } elseif ($d1List -match '"uuid"\s*:\s*"([^"]+)"') {
-        $d1Id = $matches[1]
-    } elseif ($d1List -match '"([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})"') {
-        $d1Id = $matches[1]
-    } else {
-        Write-Host $d1List
-        Write-Fail "Cannot extract D1 database_id. Output shown above."
+    $d1Json = npx wrangler d1 list --json 2>&1 | Where-Object { $_ -match '^\s*[\[{]' -or $_ -match '^\s*"}?\s*$' -or $_ -match '^\s*"' } | Out-String
+    try {
+        $d1Data = $d1Json | ConvertFrom-Json
+        $d1Db = $d1Data | Where-Object { $_.name -eq 'dns-db' }
+        if ($d1Db -and $d1Db.uuid) {
+            $d1Id = $d1Db.uuid
+        } elseif ($d1Db -and $d1Db.database_id) {
+            $d1Id = $d1Db.database_id
+        } else {
+            Write-Fail "D1 database 'dns-db' not found in JSON output"
+        }
+    } catch {
+        $d1Raw = npx wrangler d1 list 2>&1 | Out-String
+        $lines = $d1Raw -split "`n"
+        foreach ($line in $lines) {
+            if ($line -match 'dns-db' -and $line -match '([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})') {
+                $d1Id = $matches[1]
+                break
+            }
+        }
+        if (-not $d1Id) {
+            Write-Host $d1Raw
+            Write-Fail "Cannot extract D1 database_id. Output shown above."
+        }
     }
 } else {
     $d1Output = npx wrangler d1 create dns-db 2>&1 | Out-String
-    if ($d1Output -match '([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\s*[│|]\s*dns-db') {
-        $d1Id = $matches[1]
-    } elseif ($d1Output -match 'database_id\s*=\s*"([^"]+)"') {
-        $d1Id = $matches[1]
-    } elseif ($d1Output -match '"database_id"\s*:\s*"([^"]+)"') {
-        $d1Id = $matches[1]
-    } elseif ($d1Output -match '"uuid"\s*:\s*"([^"]+)"') {
-        $d1Id = $matches[1]
-    } elseif ($d1Output -match '"([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})"') {
-        $d1Id = $matches[1]
-    } else {
+    $lines = $d1Output -split "`n"
+    foreach ($line in $lines) {
+        if ($line -match 'database_id\s*=\s*"([^"]+)"') {
+            $d1Id = $matches[1]
+            break
+        }
+    }
+    if (-not $d1Id) {
+        foreach ($line in $lines) {
+            if ($line -match '([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})') {
+                $d1Id = $matches[1]
+                break
+            }
+        }
+    }
+    if (-not $d1Id) {
         Write-Host $d1Output
         Write-Fail "Failed to create D1 database"
     }
@@ -204,34 +218,64 @@ Write-Host "  Database ID: $d1Id" -ForegroundColor Yellow
 Write-Host "  -> Creating KV namespace..."
 $kvExists = $false
 try {
-    $kvList = npx wrangler kv:namespace list 2>&1 | Out-String
-    if ($kvList -match '"KV"') {
-        $kvExists = $true
+    $kvJson = npx wrangler kv:namespace list 2>&1 | Where-Object { $_ -match '^\s*[\[{]' -or $_ -match '^\s*"}?\s*$' -or $_ -match '^\s*"' } | Out-String
+    try {
+        $kvData = $kvJson | ConvertFrom-Json
+        $kvNs = $kvData | Where-Object { $_.title -eq 'KV' -or $_.name -eq 'KV' }
+        if ($kvNs) {
+            $kvExists = $true
+        }
+    } catch {
+        $kvList = npx wrangler kv:namespace list 2>&1 | Out-String
+        if ($kvList -match '"KV"') {
+            $kvExists = $true
+        }
     }
 } catch { }
 
 if ($kvExists) {
     Write-Host "  SKIP KV namespace 'KV' already exists" -ForegroundColor Yellow
-    $kvList = npx wrangler kv:namespace list 2>&1 | Out-String
-    if ($kvList -match 'id\s*=\s*"([^"]+)"') {
-        $kvId = $matches[1]
-    } elseif ($kvList -match '"id"\s*:\s*"([^"]+)"') {
-        $kvId = $matches[1]
-    } elseif ($kvList -match '"([a-f0-9]{32,})"') {
-        $kvId = $matches[1]
-    } else {
-        Write-Host $kvList
-        Write-Fail "Cannot extract KV id. Output shown above."
+    try {
+        $kvJson = npx wrangler kv:namespace list 2>&1 | Where-Object { $_ -match '^\s*[\[{]' -or $_ -match '^\s*"}?\s*$' -or $_ -match '^\s*"' } | Out-String
+        $kvData = $kvJson | ConvertFrom-Json
+        $kvNs = $kvData | Where-Object { $_.title -eq 'KV' -or $_.name -eq 'KV' }
+        if ($kvNs -and $kvNs.id) {
+            $kvId = $kvNs.id
+        } else {
+            Write-Fail "KV namespace 'KV' not found in JSON output"
+        }
+    } catch {
+        $kvRaw = npx wrangler kv:namespace list 2>&1 | Out-String
+        $lines = $kvRaw -split "`n"
+        foreach ($line in $lines) {
+            if ($line -match 'KV' -and $line -match '"([a-f0-9]{32,})"') {
+                $kvId = $matches[1]
+                break
+            }
+        }
+        if (-not $kvId) {
+            Write-Host $kvRaw
+            Write-Fail "Cannot extract KV id. Output shown above."
+        }
     }
 } else {
     $kvOutput = npx wrangler kv:namespace create KV 2>&1 | Out-String
-    if ($kvOutput -match 'id\s*=\s*"([^"]+)"') {
-        $kvId = $matches[1]
-    } elseif ($kvOutput -match '"id"\s*:\s*"([^"]+)"') {
-        $kvId = $matches[1]
-    } elseif ($kvOutput -match '"([a-f0-9]{32,})"') {
-        $kvId = $matches[1]
-    } else {
+    $lines = $kvOutput -split "`n"
+    foreach ($line in $lines) {
+        if ($line -match 'id\s*=\s*"([^"]+)"') {
+            $kvId = $matches[1]
+            break
+        }
+    }
+    if (-not $kvId) {
+        foreach ($line in $lines) {
+            if ($line -match '"([a-f0-9]{32,})"') {
+                $kvId = $matches[1]
+                break
+            }
+        }
+    }
+    if (-not $kvId) {
         Write-Host $kvOutput
         Write-Fail "Failed to create KV namespace"
     }
