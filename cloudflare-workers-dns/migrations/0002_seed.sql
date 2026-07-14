@@ -5,7 +5,7 @@
 -- 默认管理员 (admin@qq.com / admin123)
 -- bcrypt hash for 'admin123' with 10 rounds
 INSERT OR IGNORE INTO users (username, email, role, status, balance, max_domains, password_hash, created_at, updated_at)
-VALUES ('admin', 'admin@qq.com', 'admin', 1, 0, 999, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', datetime('now'), datetime('now'));
+VALUES ('admin', 'admin@qq.com', 'admin', 1, 0, 999, '$2a$10$euDyhkdUJAP149lqcPYYfuikkqVj7cD1gCU1WutYiXEUU/cHSh.3G', datetime('now'), datetime('now'));
 
 -- 默认系统设置
 INSERT OR IGNORE INTO settings (key, value) VALUES ('site_name', '六趣DNS');
