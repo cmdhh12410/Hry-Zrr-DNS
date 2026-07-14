@@ -3,7 +3,8 @@
 # Usage: .\deploy.ps1
 # ============================================================
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
+$ProgressPreference = "SilentlyContinue"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
