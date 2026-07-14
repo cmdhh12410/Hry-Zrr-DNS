@@ -97,13 +97,25 @@ try {
     exit 1
 }
 
-# Check wrangler login
+# Check wrangler login (supports both OAuth and API Token)
+$loggedIn = $false
 try {
     $null = npx wrangler whoami 2>&1
+    $loggedIn = $true
+} catch { }
+
+if (-not $loggedIn) {
+    if ($env:CLOUDFLARE_API_TOKEN) {
+        $loggedIn = $true
+    }
+}
+
+if ($loggedIn) {
     Write-Host "  OK wrangler logged in" -ForegroundColor Green
-} catch {
+} else {
     Write-Host "  FAIL wrangler not logged in" -ForegroundColor Red
     Write-Host "  Run: npx wrangler login" -ForegroundColor Yellow
+    Write-Host "  Or set env: CLOUDFLARE_API_TOKEN" -ForegroundColor Yellow
     exit 1
 }
 
