@@ -1,9 +1,10 @@
 # ============================================================
-# 一键部署脚本 - DNS 分发系统 (Windows PowerShell)
-# 用法: .\deploy.ps1
+# DNS System - One-Click Deploy (Windows PowerShell)
+# Usage: .\deploy.ps1
 # ============================================================
 
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $ScriptDir
@@ -11,7 +12,6 @@ Set-Location $ScriptDir
 $Step = 0
 $Total = 7
 
-# 颜色函数
 function Write-Step {
     param([string]$Message)
     $global:Step++
@@ -22,251 +22,276 @@ function Write-Step {
 
 function Write-Ok {
     param([string]$Message)
-    Write-Host "  ✓ $Message" -ForegroundColor Green
+    Write-Host "  OK $Message" -ForegroundColor Green
 }
 
 function Write-Fail {
     param([string]$Message)
-    Write-Host "  ✗ $Message" -ForegroundColor Red
+    Write-Host "  FAIL $Message" -ForegroundColor Red
     Write-Host ""
-    Write-Host "部署失败！请检查以上错误信息。" -ForegroundColor Red
+    Write-Host "Deploy failed! Check the error above." -ForegroundColor Red
     exit 1
 }
 
 # ============================================================
-# 欢迎信息
+# Welcome
 # ============================================================
 Clear-Host
 Write-Host ""
-Write-Host "  ╔══════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "  ║                                              ║" -ForegroundColor Cyan
-Write-Host "  ║      六趣DNS - 一键部署脚本                  ║" -ForegroundColor Cyan
-Write-Host "  ║      Cloudflare Workers + D1 + KV            ║" -ForegroundColor Cyan
-Write-Host "  ║                                              ║" -ForegroundColor Cyan
-Write-Host "  ╚══════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "  ================================================" -ForegroundColor Cyan
+Write-Host "  DNS System - Deploy Script" -ForegroundColor Cyan
+Write-Host "  Cloudflare Workers + D1 + KV" -ForegroundColor Cyan
+Write-Host "  ================================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  本脚本将自动完成以下步骤:"
+Write-Host "  Steps:"
+Write-Host "    1. Check environment (Node.js, npm, wrangler)"
+Write-Host "    2. Install dependencies (npm install)"
+Write-Host "    3. Create Cloudflare resources (D1 + KV)"
+Write-Host "    4. Initialize database (Schema + Seed)"
+Write-Host "    5. Configure JWT secret"
+Write-Host "    6. Deploy Worker to Cloudflare"
+Write-Host "    7. Verify deployment"
 Write-Host ""
-Write-Host "    1. 环境检查 (Node.js, npm, wrangler)"
-Write-Host "    2. 安装项目依赖 (npm install)"
-Write-Host "    3. 创建 Cloudflare 资源 (D1 + KV)"
-Write-Host "    4. 初始化数据库 (表结构 + 种子数据)"
-Write-Host "    5. 配置 JWT 密钥"
-Write-Host "    6. 部署 Worker 到 Cloudflare"
-Write-Host "    7. 验证部署结果"
-Write-Host ""
-Write-Host "  请确保你已安装并登录 Cloudflare:"
+Write-Host "  Make sure you have logged in to Cloudflare:"
 Write-Host "    npx wrangler login" -ForegroundColor Yellow
 Write-Host ""
-Read-Host "  按 Enter 开始部署，或 Ctrl+C 取消"
+Read-Host "  Press Enter to start, or Ctrl+C to cancel"
 
 # ============================================================
-# Step 1: 环境检查
+# Step 1: Check Environment
 # ============================================================
-Write-Step "环境检查"
+Write-Step "Check environment"
 
-# 检查 Node.js
+# Check Node.js
 try {
     $nodeVersion = (node -v) -replace 'v', ''
     $majorVersion = [int]($nodeVersion -split '\.')[0]
     if ($majorVersion -ge 18) {
-        Write-Host "  ✓ Node.js >= 18 (当前: v$nodeVersion)" -ForegroundColor Green
+        Write-Host "  OK Node.js >= 18 (v$nodeVersion)" -ForegroundColor Green
     } else {
-        Write-Host "  ✗ Node.js 版本过低 (当前: v$nodeVersion, 需要 >= 18)" -ForegroundColor Red
-        Write-Host "  → 请安装 Node.js 18+: https://nodejs.org/" -ForegroundColor Yellow
+        Write-Host "  FAIL Node.js too old (v$nodeVersion, need >= 18)" -ForegroundColor Red
         exit 1
     }
 } catch {
-    Write-Host "  ✗ Node.js 未安装" -ForegroundColor Red
-    Write-Host "  → 请安装 Node.js 18+: https://nodejs.org/" -ForegroundColor Yellow
+    Write-Host "  FAIL Node.js not installed" -ForegroundColor Red
+    Write-Host "  Download: https://nodejs.org/" -ForegroundColor Yellow
     exit 1
 }
 
-# 检查 npm
+# Check npm
 try {
     $npmVersion = npm -v
-    Write-Host "  ✓ npm (当前: $npmVersion)" -ForegroundColor Green
+    Write-Host "  OK npm ($npmVersion)" -ForegroundColor Green
 } catch {
-    Write-Host "  ✗ npm 未安装" -ForegroundColor Red
+    Write-Host "  FAIL npm not installed" -ForegroundColor Red
     exit 1
 }
 
-# 检查 wrangler
+# Check wrangler
 try {
-    $wranglerCheck = npx wrangler --version 2>&1
-    Write-Host "  ✓ wrangler CLI" -ForegroundColor Green
+    $null = npx wrangler --version 2>&1
+    Write-Host "  OK wrangler CLI" -ForegroundColor Green
 } catch {
-    Write-Host "  ✗ wrangler CLI 未安装" -ForegroundColor Red
-    Write-Host "  → 请运行: npm install -g wrangler" -ForegroundColor Yellow
+    Write-Host "  FAIL wrangler not installed" -ForegroundColor Red
+    Write-Host "  Run: npm install -g wrangler" -ForegroundColor Yellow
     exit 1
 }
 
-# 检查 wrangler 登录
+# Check wrangler login
 try {
-    $whoami = npx wrangler whoami 2>&1
-    Write-Host "  ✓ wrangler 已登录" -ForegroundColor Green
+    $null = npx wrangler whoami 2>&1
+    Write-Host "  OK wrangler logged in" -ForegroundColor Green
 } catch {
-    Write-Host "  ✗ wrangler 未登录" -ForegroundColor Red
-    Write-Host "  → 请运行: npx wrangler login" -ForegroundColor Yellow
+    Write-Host "  FAIL wrangler not logged in" -ForegroundColor Red
+    Write-Host "  Run: npx wrangler login" -ForegroundColor Yellow
     exit 1
 }
 
-# 检查项目文件
+# Check project files
 if (Test-Path "wrangler.toml") {
-    Write-Host "  ✓ wrangler.toml 存在" -ForegroundColor Green
+    Write-Host "  OK wrangler.toml" -ForegroundColor Green
 } else {
-    Write-Host "  ✗ wrangler.toml 不存在" -ForegroundColor Red
+    Write-Host "  FAIL wrangler.toml not found" -ForegroundColor Red
     exit 1
 }
 
-if (Test-Path "migrations/0001_initial.sql") {
-    Write-Host "  ✓ 数据库迁移文件" -ForegroundColor Green
+if (Test-Path "migrations\0001_initial.sql") {
+    Write-Host "  OK migration files" -ForegroundColor Green
 } else {
-    Write-Host "  ✗ 数据库迁移文件不存在" -ForegroundColor Red
+    Write-Host "  FAIL migration files not found" -ForegroundColor Red
     exit 1
 }
 
-Write-Ok "环境检查通过"
+Write-Ok "Environment check passed"
 
 # ============================================================
-# Step 2: 安装依赖
+# Step 2: Install Dependencies
 # ============================================================
-Write-Step "安装项目依赖"
+Write-Step "Install dependencies"
 
 if (-not (Test-Path "node_modules")) {
     npm install
-    Write-Ok "依赖安装完成"
+    Write-Ok "Dependencies installed"
 } else {
-    Write-Ok "依赖已存在，跳过安装"
+    Write-Ok "Dependencies already exist, skip"
 }
 
 # ============================================================
-# Step 3: 创建 Cloudflare 资源
+# Step 3: Create Cloudflare Resources
 # ============================================================
-Write-Step "创建 Cloudflare 资源"
+Write-Step "Create Cloudflare resources"
 
-Write-Host "  → 创建 D1 数据库..."
-
+Write-Host "  -> Creating D1 database..."
+$d1Exists = $false
 try {
-    $d1Exists = npx wrangler d1 list 2>&1 | Select-String "dns-db"
-} catch {
-    $d1Exists = $null
-}
+    $d1List = npx wrangler d1 list 2>&1 | Out-String
+    if ($d1List -match "dns-db") {
+        $d1Exists = $true
+    }
+} catch { }
 
 if ($d1Exists) {
-    Write-Host "  ⚠ D1 数据库 'dns-db' 已存在，跳过创建" -ForegroundColor Yellow
-    $d1List = npx wrangler d1 list 2>&1
-    $d1Id = ($d1List | Select-String 'database_id' | Out-String) -replace '.*"([^"]+)".*', '$1'
+    Write-Host "  SKIP D1 database 'dns-db' already exists" -ForegroundColor Yellow
+    $d1List = npx wrangler d1 list 2>&1 | Out-String
+    if ($d1List -match '"database_id"\s*:\s*"([^"]+)"') {
+        $d1Id = $matches[1]
+    } else {
+        Write-Fail "Cannot extract D1 database_id"
+    }
 } else {
-    $d1Output = npx wrangler d1 create dns-db 2>&1
-    $d1Id = ($d1Output | Out-String) -replace '(?s).*database_id.*?"([^"]+)".*', '$1'
-    Write-Host "  ✓ D1 数据库创建成功" -ForegroundColor Green
+    $d1Output = npx wrangler d1 create dns-db 2>&1 | Out-String
+    if ($d1Output -match '"database_id"\s*:\s*"([^"]+)"') {
+        $d1Id = $matches[1]
+    } else {
+        Write-Host $d1Output
+        Write-Fail "Failed to create D1 database"
+    }
+    Write-Host "  OK D1 database created" -ForegroundColor Green
 }
-
 Write-Host "  Database ID: $d1Id" -ForegroundColor Yellow
 
-Write-Host "  → 创建 KV 命名空间..."
-
+Write-Host "  -> Creating KV namespace..."
+$kvExists = $false
 try {
-    $kvExists = npx wrangler kv:namespace list 2>&1 | Select-String '"KV"'
-} catch {
-    $kvExists = $null
-}
+    $kvList = npx wrangler kv:namespace list 2>&1 | Out-String
+    if ($kvList -match '"KV"') {
+        $kvExists = $true
+    }
+} catch { }
 
 if ($kvExists) {
-    Write-Host "  ⚠ KV 命名空间 'KV' 已存在，跳过创建" -ForegroundColor Yellow
-    $kvList = npx wrangler kv:namespace list 2>&1
-    $kvId = ($kvList | Select-String 'id' | Out-String) -replace '.*"([^"]+)".*', '$1'
+    Write-Host "  SKIP KV namespace 'KV' already exists" -ForegroundColor Yellow
+    $kvList = npx wrangler kv:namespace list 2>&1 | Out-String
+    if ($kvList -match '"id"\s*:\s*"([^"]+)"') {
+        $kvId = $matches[1]
+    } else {
+        Write-Fail "Cannot extract KV id"
+    }
 } else {
-    $kvOutput = npx wrangler kv:namespace create KV 2>&1
-    $kvId = ($kvOutput | Out-String) -replace '(?s).*"id".*?"([^"]+)".*', '$1'
-    Write-Host "  ✓ KV 命名空间创建成功" -ForegroundColor Green
+    $kvOutput = npx wrangler kv:namespace create KV 2>&1 | Out-String
+    if ($kvOutput -match '"id"\s*:\s*"([^"]+)"') {
+        $kvId = $matches[1]
+    } else {
+        Write-Host $kvOutput
+        Write-Fail "Failed to create KV namespace"
+    }
+    Write-Host "  OK KV namespace created" -ForegroundColor Green
 }
-
 Write-Host "  KV ID: $kvId" -ForegroundColor Yellow
 
-# 更新 wrangler.toml
-Write-Host "  → 更新 wrangler.toml..."
-$tomlContent = Get-Content wrangler.toml -Raw
+Write-Host "  -> Updating wrangler.toml..."
+$tomlContent = Get-Content wrangler.toml -Raw -Encoding UTF8
 $tomlContent = $tomlContent -replace 'KV_ID_PLACEHOLDER', $kvId
 $tomlContent = $tomlContent -replace 'KV_PREVIEW_ID_PLACEHOLDER', $kvId
 $tomlContent = $tomlContent -replace 'D1_ID_PLACEHOLDER', $d1Id
-Set-Content wrangler.toml $tomlContent -NoNewline
-Write-Ok "wrangler.toml 已更新"
+Set-Content wrangler.toml $tomlContent -NoNewline -Encoding UTF8
+Write-Ok "wrangler.toml updated"
 
-Write-Ok "资源创建完成"
-
-# ============================================================
-# Step 4: 初始化数据库
-# ============================================================
-Write-Step "初始化数据库"
-
-Write-Host "  → 创建表结构..."
-npx wrangler d1 execute dns-db --remote --file=./migrations/0001_initial.sql
-Write-Ok "表结构创建完成"
-
-Write-Host "  → 导入种子数据..."
-npx wrangler d1 execute dns-db --remote --file=./migrations/0002_seed.sql
-Write-Ok "种子数据导入完成"
-
-Write-Ok "数据库初始化完成"
+Write-Ok "Resources created"
 
 # ============================================================
-# Step 5: 配置 JWT 密钥
+# Step 4: Initialize Database
 # ============================================================
-Write-Step "配置 JWT 密钥"
+Write-Step "Initialize database"
+
+try {
+    Write-Host "  -> Creating tables..."
+    npx wrangler d1 execute dns-db --remote --file=./migrations/0001_initial.sql 2>&1 | Out-Null
+    Write-Ok "Tables created"
+} catch {
+    Write-Fail "Failed to create tables"
+}
+
+try {
+    Write-Host "  -> Importing seed data..."
+    npx wrangler d1 execute dns-db --remote --file=./migrations/0002_seed.sql 2>&1 | Out-Null
+    Write-Ok "Seed data imported"
+} catch {
+    Write-Fail "Failed to import seed data"
+}
+
+Write-Ok "Database initialized"
+
+# ============================================================
+# Step 5: Configure JWT Secret
+# ============================================================
+Write-Step "Configure JWT secret"
 
 $jwtSecret = $null
 if (Test-Path ".env") {
-    $envContent = Get-Content .env -Raw
+    $envContent = Get-Content .env -Raw -Encoding UTF8
     if ($envContent -match 'JWT_SECRET=(.+)') {
         $jwtSecret = $matches[1].Trim()
     }
 }
 
 if (-not $jwtSecret) {
-    $jwtSecret = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 64 | ForEach-Object { [char]$_ })
-    Add-Content .env "JWT_SECRET=$jwtSecret"
+    $bytes = New-Object byte[] 32
+    [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+    $jwtSecret = [BitConverter]::ToString($bytes) -replace '-', ''
+    Add-Content .env "JWT_SECRET=$jwtSecret" -Encoding UTF8
 }
 
-Write-Host "  → 上传 JWT_SECRET 到 Cloudflare..."
+Write-Host "  -> Uploading JWT_SECRET to Cloudflare..."
 $jwtSecret | npx wrangler secret put JWT_SECRET 2>&1 | Out-Null
-Write-Ok "JWT 密钥已配置"
+Write-Ok "JWT secret configured"
 
 # ============================================================
-# Step 6: 部署 Worker
+# Step 6: Deploy Worker
 # ============================================================
-Write-Step "部署 Worker 到 Cloudflare"
+Write-Step "Deploy Worker to Cloudflare"
 
-$deployOutput = npx wrangler deploy 2>&1
-$deployOutputStr = $deployOutput | Out-String
+$deployOutput = npx wrangler deploy 2>&1 | Out-String
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host $deployOutputStr
-    Write-Fail "Worker 部署失败"
+    Write-Host $deployOutput
+    Write-Fail "Worker deploy failed"
 }
 
-# 提取 Worker URL
 $workerUrl = ""
-if ($deployOutputStr -match 'https://[a-zA-Z0-9.-]+\.workers\.dev') {
+if ($deployOutput -match 'https://[a-zA-Z0-9.-]+\.workers\.dev') {
     $workerUrl = $matches[0]
 }
 
 if (-not $workerUrl) {
-    $workerName = (Get-Content wrangler.toml -Raw) -replace '(?s).*name\s*=\s*"([^"]+)".*', '$1'
-    Write-Host "  ⚠ 无法自动提取 Worker URL，使用默认格式" -ForegroundColor Yellow
+    if ($tomlContent -match 'name\s*=\s*"([^"]+)"') {
+        $workerName = $matches[1]
+    } else {
+        $workerName = "dns-distribution-system"
+    }
+    Write-Host "  WARN Cannot extract Worker URL, using default" -ForegroundColor Yellow
     $workerUrl = "https://$workerName.your-subdomain.workers.dev"
 }
 
-Write-Ok "Worker 部署成功"
+Write-Ok "Worker deployed"
 Write-Host "  URL: $workerUrl" -ForegroundColor Cyan
 
 # ============================================================
-# Step 7: 验证部署
+# Step 7: Verify Deployment
 # ============================================================
-Write-Step "验证部署"
+Write-Step "Verify deployment"
 
-Write-Host "  → 健康检查..."
+Write-Host "  -> Health check..."
 $maxRetries = 5
 $healthOk = $false
 
@@ -274,53 +299,51 @@ for ($i = 1; $i -le $maxRetries; $i++) {
     try {
         $response = Invoke-WebRequest -Uri "$workerUrl/health" -Method Get -TimeoutSec 10 -UseBasicParsing
         if ($response.StatusCode -eq 200) {
-            Write-Host "  ✓ /health 返回 200" -ForegroundColor Green
+            Write-Host "  OK /health returns 200" -ForegroundColor Green
             $healthOk = $true
             break
         }
     } catch {
-        Write-Host "  → 重试 $i/$maxRetries..." -ForegroundColor Yellow
+        Write-Host "  -> Retry $i/$maxRetries..." -ForegroundColor Yellow
         Start-Sleep -Seconds 3
     }
 }
 
 if (-not $healthOk) {
-    Write-Host "  ⚠ 健康检查超时，请稍后手动验证" -ForegroundColor Yellow
+    Write-Host "  WARN Health check timeout, verify manually later" -ForegroundColor Yellow
 }
 
-Write-Host "  → 管理员登录测试..."
+Write-Host "  -> Admin login test..."
 try {
     $loginBody = @{account="admin@qq.com";password="admin123"} | ConvertTo-Json
     $loginResp = Invoke-RestMethod -Uri "$workerUrl/api/auth/login" -Method Post -Body $loginBody -ContentType "application/json" -TimeoutSec 10
     if ($loginResp.code -eq 200) {
-        Write-Host "  ✓ 管理员登录成功" -ForegroundColor Green
+        Write-Host "  OK Admin login success" -ForegroundColor Green
     } else {
-        Write-Host "  ⚠ 管理员登录异常" -ForegroundColor Yellow
+        Write-Host "  WARN Admin login failed" -ForegroundColor Yellow
     }
 } catch {
-    Write-Host "  ⚠ 登录测试失败，请稍后手动验证" -ForegroundColor Yellow
+    Write-Host "  WARN Login test failed, verify manually later" -ForegroundColor Yellow
 }
 
 # ============================================================
-# 完成
+# Done
 # ============================================================
 Write-Host ""
 Write-Host ("-" * 55)
 Write-Host ""
-Write-Host "  🎉 部署成功！" -ForegroundColor Green
+Write-Host "  DEPLOY SUCCESS!" -ForegroundColor Green
 Write-Host ""
-Write-Host "  ┌─────────────────────────────────────────────┐"
-Write-Host "  │  Worker URL:  $workerUrl" -ForegroundColor Cyan
-Write-Host "  │  管理后台:    $workerUrl/admin" -ForegroundColor Cyan
-Write-Host "  │  管理员账号:  admin@qq.com" -ForegroundColor Yellow
-Write-Host "  │  管理员密码:  admin123" -ForegroundColor Yellow
-Write-Host "  └─────────────────────────────────────────────┘"
+Write-Host "  Worker URL:   $workerUrl" -ForegroundColor Cyan
+Write-Host "  Admin Panel:  $workerUrl/admin" -ForegroundColor Cyan
+Write-Host "  Admin Email:  admin@qq.com" -ForegroundColor Yellow
+Write-Host "  Admin Pass:   admin123" -ForegroundColor Yellow
 Write-Host ""
-Write-Host "  ⚠ 重要：首次登录后请立即修改管理员密码！" -ForegroundColor Red
+Write-Host "  IMPORTANT: Change admin password after first login!" -ForegroundColor Red
 Write-Host ""
-Write-Host "  常用命令:"
-Write-Host "    npx wrangler tail      查看实时日志"
-Write-Host "    npx wrangler deploy    重新部署"
-Write-Host "    npx wrangler dev       本地开发"
+Write-Host "  Useful commands:"
+Write-Host "    npx wrangler tail       View live logs"
+Write-Host "    npx wrangler deploy     Re-deploy"
+Write-Host "    npx wrangler dev        Local dev"
 Write-Host ""
 exit 0
