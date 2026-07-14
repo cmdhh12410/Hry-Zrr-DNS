@@ -89,10 +89,10 @@ try {
 }
 
 # Check wrangler
-try {
-    $null = npx wrangler --version 2>&1
+$wranglerVersion = cmd /c "npx wrangler --version 2>&1"
+if ($LASTEXITCODE -eq 0 -and $wranglerVersion) {
     Write-Host "  OK wrangler CLI" -ForegroundColor Green
-} catch {
+} else {
     Write-Host "  FAIL wrangler not installed" -ForegroundColor Red
     Write-Host "  Run: npm install -g wrangler" -ForegroundColor Yellow
     exit 1
@@ -100,15 +100,13 @@ try {
 
 # Check wrangler login (supports both OAuth and API Token)
 $loggedIn = $false
-try {
-    $null = npx wrangler whoami 2>&1
+$whoamiOutput = cmd /c "npx wrangler whoami 2>&1"
+if ($LASTEXITCODE -eq 0 -and $whoamiOutput -match 'logged in|You are logged in|👋') {
     $loggedIn = $true
-} catch { }
+}
 
-if (-not $loggedIn) {
-    if ($env:CLOUDFLARE_API_TOKEN) {
-        $loggedIn = $true
-    }
+if (-not $loggedIn -and $env:CLOUDFLARE_API_TOKEN) {
+    $loggedIn = $true
 }
 
 if ($loggedIn) {
@@ -155,43 +153,26 @@ if (-not (Test-Path "node_modules")) {
 Write-Step "Create Cloudflare resources"
 
 Write-Host "  -> Creating D1 database..."
-$d1Exists = $false
-try {
-    $d1List = npx wrangler d1 list 2>&1 | Out-String
-    if ($d1List -match "dns-db") {
-        $d1Exists = $true
-    }
-} catch { }
+$d1Id = $null
 
-if ($d1Exists) {
-    Write-Host "  SKIP D1 database 'dns-db' already exists" -ForegroundColor Yellow
-    $d1Json = npx wrangler d1 list --json 2>&1 | Where-Object { $_ -match '^\s*[\[{]' -or $_ -match '^\s*"}?\s*$' -or $_ -match '^\s*"' } | Out-String
-    try {
-        $d1Data = $d1Json | ConvertFrom-Json
-        $d1Db = $d1Data | Where-Object { $_.name -eq 'dns-db' }
-        if ($d1Db -and $d1Db.uuid) {
-            $d1Id = $d1Db.uuid
-        } elseif ($d1Db -and $d1Db.database_id) {
-            $d1Id = $d1Db.database_id
-        } else {
-            Write-Fail "D1 database 'dns-db' not found in JSON output"
-        }
-    } catch {
-        $d1Raw = npx wrangler d1 list 2>&1 | Out-String
-        $lines = $d1Raw -split "`n"
-        foreach ($line in $lines) {
-            if ($line -match 'dns-db' -and $line -match '([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})') {
-                $d1Id = $matches[1]
-                break
-            }
-        }
-        if (-not $d1Id) {
-            Write-Host $d1Raw
-            Write-Fail "Cannot extract D1 database_id. Output shown above."
+function Find-D1Id {
+    $output = cmd /c "npx wrangler d1 list 2>&1"
+    $raw = $output | Out-String
+    $lines = $raw -split "`n"
+    foreach ($line in $lines) {
+        if ($line -match 'dns-db' -and $line -match '([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})') {
+            return $matches[1]
         }
     }
+    return $null
+}
+
+$d1Id = Find-D1Id
+
+if ($d1Id) {
+    Write-Host "  SKIP D1 database 'dns-db' already exists" -ForegroundColor Yellow
 } else {
-    $d1Output = npx wrangler d1 create dns-db 2>&1 | Out-String
+    $d1Output = cmd /c "npx wrangler d1 create dns-db 2>&1" | Out-String
     $lines = $d1Output -split "`n"
     foreach ($line in $lines) {
         if ($line -match 'database_id\s*=\s*"([^"]+)"') {
@@ -219,7 +200,8 @@ Write-Host "  -> Creating KV namespace..."
 $kvId = $null
 
 function Find-KvId {
-    $raw = npx wrangler kv:namespace list 2>&1 | Out-String
+    $output = cmd /c "npx wrangler kv:namespace list 2>&1"
+    $raw = $output | Out-String
     $lines = $raw -split "`n"
     $lastId = $null
     foreach ($line in $lines) {
@@ -239,7 +221,7 @@ $kvId = Find-KvId
 if ($kvId) {
     Write-Host "  SKIP KV namespace already exists" -ForegroundColor Yellow
 } else {
-    $kvOutput = npx wrangler kv:namespace create KV 2>&1 | Out-String
+    $kvOutput = cmd /c "npx wrangler kv:namespace create KV 2>&1" | Out-String
     if ($kvOutput -match 'already exists') {
         $kvId = Find-KvId
     }
@@ -285,7 +267,8 @@ Write-Step "Initialize database"
 
 try {
     Write-Host "  -> Creating tables..."
-    npx wrangler d1 execute dns-db --remote --file=./migrations/0001_initial.sql 2>&1 | Out-Null
+    cmd /c "npx wrangler d1 execute dns-db --remote --file=./migrations/0001_initial.sql 2>&1" | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "d1 execute failed" }
     Write-Ok "Tables created"
 } catch {
     Write-Fail "Failed to create tables"
@@ -293,7 +276,8 @@ try {
 
 try {
     Write-Host "  -> Importing seed data..."
-    npx wrangler d1 execute dns-db --remote --file=./migrations/0002_seed.sql 2>&1 | Out-Null
+    cmd /c "npx wrangler d1 execute dns-db --remote --file=./migrations/0002_seed.sql 2>&1" | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "d1 execute failed" }
     Write-Ok "Seed data imported"
 } catch {
     Write-Fail "Failed to import seed data"
@@ -322,7 +306,10 @@ if (-not $jwtSecret) {
 }
 
 Write-Host "  -> Uploading JWT_SECRET to Cloudflare..."
-$jwtSecret | npx wrangler secret put JWT_SECRET 2>&1 | Out-Null
+$tempFile = [System.IO.Path]::GetTempFileName()
+$jwtSecret | Out-File -FilePath $tempFile -Encoding utf8 -NoNewline
+cmd /c "type `"$tempFile`" | npx wrangler secret put JWT_SECRET 2>&1" | Out-Null
+Remove-Item $tempFile -Force
 Write-Ok "JWT secret configured"
 
 # ============================================================
@@ -330,7 +317,7 @@ Write-Ok "JWT secret configured"
 # ============================================================
 Write-Step "Deploy Worker to Cloudflare"
 
-$deployOutput = npx wrangler deploy 2>&1 | Out-String
+$deployOutput = cmd /c "npx wrangler deploy 2>&1" | Out-String
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host $deployOutput
