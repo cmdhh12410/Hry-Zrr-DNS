@@ -166,18 +166,28 @@ try {
 if ($d1Exists) {
     Write-Host "  SKIP D1 database 'dns-db' already exists" -ForegroundColor Yellow
     $d1List = npx wrangler d1 list 2>&1 | Out-String
+    # Try multiple regex patterns for different output formats
     if ($d1List -match 'database_id\s*=\s*"([^"]+)"') {
         $d1Id = $matches[1]
     } elseif ($d1List -match '"database_id"\s*:\s*"([^"]+)"') {
         $d1Id = $matches[1]
+    } elseif ($d1List -match '"uuid"\s*:\s*"([^"]+)"') {
+        $d1Id = $matches[1]
+    } elseif ($d1List -match '"([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})"') {
+        $d1Id = $matches[1]
     } else {
-        Write-Fail "Cannot extract D1 database_id"
+        Write-Host $d1List
+        Write-Fail "Cannot extract D1 database_id. Output shown above."
     }
 } else {
     $d1Output = npx wrangler d1 create dns-db 2>&1 | Out-String
     if ($d1Output -match 'database_id\s*=\s*"([^"]+)"') {
         $d1Id = $matches[1]
     } elseif ($d1Output -match '"database_id"\s*:\s*"([^"]+)"') {
+        $d1Id = $matches[1]
+    } elseif ($d1Output -match '"uuid"\s*:\s*"([^"]+)"') {
+        $d1Id = $matches[1]
+    } elseif ($d1Output -match '"([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})"') {
         $d1Id = $matches[1]
     } else {
         Write-Host $d1Output
@@ -203,14 +213,19 @@ if ($kvExists) {
         $kvId = $matches[1]
     } elseif ($kvList -match '"id"\s*:\s*"([^"]+)"') {
         $kvId = $matches[1]
+    } elseif ($kvList -match '"([a-f0-9]{32,})"') {
+        $kvId = $matches[1]
     } else {
-        Write-Fail "Cannot extract KV id"
+        Write-Host $kvList
+        Write-Fail "Cannot extract KV id. Output shown above."
     }
 } else {
     $kvOutput = npx wrangler kv:namespace create KV 2>&1 | Out-String
     if ($kvOutput -match 'id\s*=\s*"([^"]+)"') {
         $kvId = $matches[1]
     } elseif ($kvOutput -match '"id"\s*:\s*"([^"]+)"') {
+        $kvId = $matches[1]
+    } elseif ($kvOutput -match '"([a-f0-9]{32,})"') {
         $kvId = $matches[1]
     } else {
         Write-Host $kvOutput
