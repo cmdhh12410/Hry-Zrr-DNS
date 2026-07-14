@@ -1,5 +1,5 @@
-import type { Env } from '../utils/types';
-import { corsHeaders } from '../utils/response';
+import type { Env } from './utils/types';
+import { corsHeaders } from './utils/response';
 
 type Handler = (request: Request, env: Env, params: Record<string, string>) => Promise<Response> | Response;
 
