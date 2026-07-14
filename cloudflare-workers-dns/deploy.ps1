@@ -217,32 +217,41 @@ Write-Host "  Database ID: $d1Id" -ForegroundColor Yellow
 
 Write-Host "  -> Creating KV namespace..."
 $kvExists = $false
+$kvId = $null
 try {
-    $kvJson = npx wrangler kv:namespace list 2>&1 | Where-Object { $_ -match '^\s*[\[{]' -or $_ -match '^\s*"}?\s*$' -or $_ -match '^\s*"' } | Out-String
+    $kvRawJson = npx wrangler kv:namespace list 2>&1
+    $kvJson = ($kvRawJson | Where-Object { $_ -match '^\s*\[' -or $_ -match '^\s*\{' -or $_ -match '^\s*"' -or $_ -match '^\s*\]' -or $_ -match '^\s*\}' -or $_ -match '^\s*,' } | Out-String).Trim()
     try {
         $kvData = $kvJson | ConvertFrom-Json
-        $kvNs = $kvData | Where-Object { $_.title -eq 'KV' -or $_.name -eq 'KV' }
+        $kvNs = $kvData | Where-Object { $_.title -eq 'KV' -or $_.name -eq 'KV' -or $_.title -like '*-KV' -or $_.title -like '*dns-distribution*' }
         if ($kvNs) {
             $kvExists = $true
+            $kvId = $kvNs[0].id
+            if (-not $kvId) { $kvId = $kvNs.id }
         }
     } catch {
-        $kvList = npx wrangler kv:namespace list 2>&1 | Out-String
-        if ($kvList -match '"KV"') {
+        $kvList = $kvRawJson | Out-String
+        if ($kvList -match '"KV"' -or $kvList -match '-KV"') {
             $kvExists = $true
         }
     }
 } catch { }
 
-if ($kvExists) {
-    Write-Host "  SKIP KV namespace 'KV' already exists" -ForegroundColor Yellow
+if ($kvExists -and $kvId) {
+    Write-Host "  SKIP KV namespace already exists" -ForegroundColor Yellow
+} elseif ($kvExists) {
+    Write-Host "  SKIP KV namespace already exists, extracting ID..." -ForegroundColor Yellow
     try {
-        $kvJson = npx wrangler kv:namespace list 2>&1 | Where-Object { $_ -match '^\s*[\[{]' -or $_ -match '^\s*"}?\s*$' -or $_ -match '^\s*"' } | Out-String
+        $kvRawJson = npx wrangler kv:namespace list 2>&1
+        $kvJson = ($kvRawJson | Where-Object { $_ -match '^\s*\[' -or $_ -match '^\s*\{' -or $_ -match '^\s*"' -or $_ -match '^\s*\]' -or $_ -match '^\s*\}' -or $_ -match '^\s*,' } | Out-String).Trim()
         $kvData = $kvJson | ConvertFrom-Json
-        $kvNs = $kvData | Where-Object { $_.title -eq 'KV' -or $_.name -eq 'KV' }
-        if ($kvNs -and $kvNs.id) {
+        $kvNs = $kvData | Where-Object { $_.title -eq 'KV' -or $_.name -eq 'KV' -or $_.title -like '*-KV' -or $_.title -like '*dns-distribution*' }
+        if ($kvNs -and $kvNs[0].id) {
+            $kvId = $kvNs[0].id
+        } elseif ($kvNs -and $kvNs.id) {
             $kvId = $kvNs.id
         } else {
-            Write-Fail "KV namespace 'KV' not found in JSON output"
+            Write-Fail "KV namespace found but cannot extract ID"
         }
     } catch {
         $kvRaw = npx wrangler kv:namespace list 2>&1 | Out-String
