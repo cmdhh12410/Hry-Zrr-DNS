@@ -273,7 +273,7 @@ const HTML_PAGES: Record<string, string> = `
 
 const APP_CSS = "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}.nav-active{color:#4f46e5;border-bottom:2px solid #4f46e5}.card{transition:transform .2s,box-shadow .2s}.card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}.table-row:hover{background-color:#f9fafb}.spinner{border:3px solid #e5e7eb;border-top:3px solid #4f46e5;border-radius:50%;width:24px;height:24px;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}";
 
-const APP_JS = "const API_BASE='';function getToken(){return localStorage.getItem('token')}function setToken(t){localStorage.setItem('token',t)}function removeToken(){localStorage.removeItem('token')}async function apiRequest(u,o){o=o||{};const t=getToken(),h={'Content-Type':'application/json',...o.headers};if(t)h.Authorization='Bearer '+t;const r=await fetch(API_BASE+u,{...o,headers:h}),d=await r.json();if(d.code===401){removeToken();window.location.href='/login';throw new Error('Not logged in')}if(d.code>=400)throw new Error(d.message||'Request failed');return d}function checkAuth(){return{user:null,async init(){const t=getToken();if(!t)return;try{const d=await apiRequest('/api/auth/me');this.user=d.data}catch(e){removeToken()}},async logout(){removeToken();window.location.href='/login'}}}function loginForm(){return{account:'',password:'',error:'',loading:false,async submit(){this.error='';this.loading=true;try{const d=await apiRequest('/api/auth/login',{method:'POST',body:JSON.stringify({account:this.account,password:this.password})});setToken(d.data.token);window.location.href='/user'}catch(e){this.error=e.message}this.loading=false}}}function registerForm(){return{username:'',email:'',password:'',confirmPassword:'',error:'',loading:false,async submit(){this.error='';if(this.password!==this.confirmPassword){this.error='Passwords do not match';return}this.loading=true;try{const d=await apiRequest('/api/auth/register',{method:'POST',body:JSON.stringify({username:this.username,email:this.email,password:this.password})});setToken(d.data.token);window.location.href='/user'}catch(e){this.error=e.message}this.loading=false}}}function loadSubdomains(){return{subdomains:[],async init(){try{const d=await apiRequest('/api/user/domains');this.subdomains=d.data||[]}catch(e){console.error(e)}}}}function loadPlans(){return{plans:[],async init(){try{const d=await apiRequest('/api/plans');this.plans=d.data||[]}catch(e){console.error(e)}}}}function queryWhois(){return{domain:'',result:null,loading:false,async submit(){this.loading=true;try{const d=await apiRequest('/api/whois',{method:'POST',body:JSON.stringify({domain:this.domain})});this.result=d.data}catch(e){console.error(e)}this.loading=false}}}function loadStats(){return{stats:{users:0,domains:0,todayReg:0,balance:0},async init(){try{const d=await apiRequest('/api/admin/stats');if(d.data){this.stats=d.data}}catch(e){console.error(e)}}}}";
+const APP_JS = "const API_BASE='';function getToken(){return localStorage.getItem('token')}function setToken(t){localStorage.setItem('token',t)}function removeToken(){localStorage.removeItem('token')}async function apiRequest(u,o){o=o||{};const t=getToken(),h={'Content-Type':'application/json',...o.headers};if(t)h.Authorization='Bearer '+t;const r=await fetch(API_BASE+u,{...o,headers:h}),d=await r.json();if(d.code===401){removeToken();window.location.href='/login';throw new Error('Not logged in')}if(d.code>=400)throw new Error(d.message||'Request failed');return d}function checkAuth(){return{user:null,async init(){const t=getToken();if(!t)return;try{const d=await apiRequest('/api/auth/me');this.user=d.data}catch(e){removeToken()}},async logout(){removeToken();window.location.href='/login'}}}function loginForm(){return{account:'',password:'',error:'',loading:false,async submit(){this.error='';this.loading=true;try{const d=await apiRequest('/api/auth/login',{method:'POST',body:JSON.stringify({account:this.account,password:this.password})});setToken(d.data.token);const isAdmin=d.data.user.role==='admin';window.location.href=isAdmin?'/admin':'/user'}catch(e){this.error=e.message}this.loading=false}}}function registerForm(){return{username:'',email:'',password:'',confirmPassword:'',error:'',loading:false,async submit(){this.error='';if(this.password!==this.confirmPassword){this.error='Passwords do not match';return}this.loading=true;try{const d=await apiRequest('/api/auth/register',{method:'POST',body:JSON.stringify({username:this.username,email:this.email,password:this.password})});setToken(d.data.token);window.location.href='/user'}catch(e){this.error=e.message}this.loading=false}}}function loadSubdomains(){return{subdomains:[],async init(){try{const d=await apiRequest('/api/user/domains');this.subdomains=d.data||[]}catch(e){console.error(e)}}}}function loadPlans(){return{plans:[],async init(){try{const d=await apiRequest('/api/plans');this.plans=d.data||[]}catch(e){console.error(e)}}}}function queryWhois(){return{domain:'',result:null,loading:false,async submit(){this.loading=true;try{const d=await apiRequest('/api/whois',{method:'POST',body:JSON.stringify({domain:this.domain})});this.result=d.data}catch(e){console.error(e)}this.loading=false}}}function loadStats(){return{stats:{users:0,domains:0,todayReg:0,balance:0},async init(){try{const d=await apiRequest('/api/admin/stats');if(d.data){this.stats.users=d.data.total_users||0;this.stats.domains=d.data.total_domains||0;this.stats.todayReg=d.data.today_new_users||0;this.stats.balance=d.data.total_revenue||0}}catch(e){console.error(e)}}}}function loadUsers(){return{users:[],loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/admin/users');this.users=d.data.users||[]}catch(e){console.error(e)}this.loading=false}}}function loadDomains(){return{domains:[],loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/admin/domains');this.domains=d.data.items||[]}catch(e){console.error(e)}this.loading=false}}}function loadChannels(){return{channels:[],loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/admin/channels');this.channels=d.data.items||[]}catch(e){console.error(e)}this.loading=false}}}function loadAdminPlans(){return{plans:[],loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/admin/plans');this.plans=d.data.items||[]}catch(e){console.error(e)}this.loading=false}}}function loadOrders(){return{orders:[],loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/admin/orders');this.orders=d.data.items||[]}catch(e){console.error(e)}this.loading=false}}}function loadSettings(){return{settings:{},loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/admin/settings');this.settings=d.data||{}}catch(e){console.error(e)}this.loading=false},async save(key,value){try{await apiRequest('/api/admin/settings',{method:'PUT',body:JSON.stringify({key,value})});this.settings[key]=value}catch(e){throw e}}}}function adminRouter(){return{currentRoute:'dashboard',init(){const path=window.location.pathname;if(path.startsWith('/admin/users'))this.currentRoute='users';else if(path.startsWith('/admin/domains'))this.currentRoute='domains';else if(path.startsWith('/admin/channels'))this.currentRoute='channels';else if(path.startsWith('/admin/plans'))this.currentRoute='plans';else if(path.startsWith('/admin/orders'))this.currentRoute='orders';else if(path.startsWith('/admin/settings'))this.currentRoute='settings';else this.currentRoute='dashboard'},navigate(route){this.currentRoute=route;window.history.pushState({},'',`/admin/${route==='dashboard'?'':route}`)}}}";
 
 const STATIC_FILES: Record<string, { content: string; contentType: string }> = {
   'css/style.css': {
@@ -675,23 +675,23 @@ const PAGES: Record<string, string> = {
         </div>
     </nav>
     <main class="max-w-7xl mx-auto px-4 py-8">
-        <div class="grid md:grid-cols-4 gap-8">
+        <div class="grid md:grid-cols-4 gap-8" x-data="adminRouter()" x-init="init()">
             <div class="md:col-span-1">
                 <div class="bg-white rounded-xl shadow-sm p-6">
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">管理菜单</h2>
                     <div class="space-y-2">
-                        <a href="/admin" class="block px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg">仪表盘</a>
-                        <a href="/admin/users" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">用户管理</a>
-                        <a href="/admin/domains" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">域名管理</a>
-                        <a href="/admin/channels" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">DNS渠道</a>
-                        <a href="/admin/plans" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">套餐管理</a>
-                        <a href="/admin/orders" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">订单管理</a>
-                        <a href="/admin/settings" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">系统设置</a>
+                        <button @click="navigate('dashboard')" class="w-full text-left px-4 py-2 rounded-lg transition-colors" :class="currentRoute === 'dashboard' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'">仪表盘</button>
+                        <button @click="navigate('users')" class="w-full text-left px-4 py-2 rounded-lg transition-colors" :class="currentRoute === 'users' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'">用户管理</button>
+                        <button @click="navigate('domains')" class="w-full text-left px-4 py-2 rounded-lg transition-colors" :class="currentRoute === 'domains' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'">域名管理</button>
+                        <button @click="navigate('channels')" class="w-full text-left px-4 py-2 rounded-lg transition-colors" :class="currentRoute === 'channels' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'">DNS渠道</button>
+                        <button @click="navigate('plans')" class="w-full text-left px-4 py-2 rounded-lg transition-colors" :class="currentRoute === 'plans' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'">套餐管理</button>
+                        <button @click="navigate('orders')" class="w-full text-left px-4 py-2 rounded-lg transition-colors" :class="currentRoute === 'orders' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'">订单管理</button>
+                        <button @click="navigate('settings')" class="w-full text-left px-4 py-2 rounded-lg transition-colors" :class="currentRoute === 'settings' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'">系统设置</button>
                     </div>
                 </div>
             </div>
             <div class="md:col-span-3">
-                <div class="bg-white rounded-xl shadow-sm p-6">
+                <div x-show="currentRoute === 'dashboard'" class="bg-white rounded-xl shadow-sm p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-6">仪表盘</h2>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4" x-data="loadStats()" x-init="init()">
                         <div class="bg-indigo-50 rounded-lg p-4 text-center">
@@ -709,6 +709,192 @@ const PAGES: Record<string, string> = {
                         <div class="bg-blue-50 rounded-lg p-4 text-center">
                             <div class="text-2xl font-bold text-blue-600" x-text="stats.balance">0</div>
                             <div class="text-sm text-gray-600">系统余额</div>
+                        </div>
+                    </div>
+                </div>
+                <div x-show="currentRoute === 'users'" class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">用户管理</h2>
+                    <div x-data="loadUsers()" x-init="init()">
+                        <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b">
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">ID</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">用户名</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">邮箱</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">角色</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">状态</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">创建时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="user in users" :key="user.id">
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="py-3 px-4" x-text="user.id"></td>
+                                        <td class="py-3 px-4" x-text="user.username"></td>
+                                        <td class="py-3 px-4" x-text="user.email"></td>
+                                        <td class="py-3 px-4">
+                                            <span class="px-2 py-1 rounded text-xs" :class="user.role === 'admin' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'" x-text="user.role === 'admin' ? '管理员' : '用户'"></span>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <span class="px-2 py-1 rounded text-xs" :class="user.status === 1 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'" x-text="user.status === 1 ? '正常' : '封禁'"></span>
+                                        </td>
+                                        <td class="py-3 px-4 text-sm text-gray-500" x-text="user.created_at"></td>
+                                    </tr>
+                                </template>
+                                <tr x-if="!loading && users.length === 0">
+                                    <td colspan="6" class="py-8 text-center text-gray-500">暂无数据</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div x-show="currentRoute === 'domains'" class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">域名管理</h2>
+                    <div x-data="loadDomains()" x-init="init()">
+                        <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b">
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">ID</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">域名</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">渠道</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">状态</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">创建时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="domain in domains" :key="domain.id">
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="py-3 px-4" x-text="domain.id"></td>
+                                        <td class="py-3 px-4 font-medium" x-text="domain.name"></td>
+                                        <td class="py-3 px-4" x-text="domain.dns_channel?.name || '-'"></td>
+                                        <td class="py-3 px-4">
+                                            <span class="px-2 py-1 rounded text-xs" :class="domain.status === 1 ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'" x-text="domain.status === 1 ? '启用' : '禁用'"></span>
+                                        </td>
+                                        <td class="py-3 px-4 text-sm text-gray-500" x-text="domain.created_at"></td>
+                                    </tr>
+                                </template>
+                                <tr x-if="!loading && domains.length === 0">
+                                    <td colspan="5" class="py-8 text-center text-gray-500">暂无数据</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div x-show="currentRoute === 'channels'" class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">DNS渠道管理</h2>
+                    <div x-data="loadChannels()" x-init="init()">
+                        <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b">
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">ID</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">名称</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">类型</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">状态</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">创建时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="channel in channels" :key="channel.id">
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="py-3 px-4" x-text="channel.id"></td>
+                                        <td class="py-3 px-4 font-medium" x-text="channel.name"></td>
+                                        <td class="py-3 px-4" x-text="channel.type || '-'"></td>
+                                        <td class="py-3 px-4">
+                                            <span class="px-2 py-1 rounded text-xs" :class="channel.status === 1 ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'" x-text="channel.status === 1 ? '启用' : '禁用'"></span>
+                                        </td>
+                                        <td class="py-3 px-4 text-sm text-gray-500" x-text="channel.created_at"></td>
+                                    </tr>
+                                </template>
+                                <tr x-if="!loading && channels.length === 0">
+                                    <td colspan="5" class="py-8 text-center text-gray-500">暂无数据</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div x-show="currentRoute === 'plans'" class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">套餐管理</h2>
+                    <div x-data="loadAdminPlans()" x-init="init()">
+                        <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <template x-for="plan in plans" :key="plan.id">
+                                <div class="border rounded-lg p-4">
+                                    <h3 class="font-semibold text-gray-900" x-text="plan.name"></h3>
+                                    <div class="mt-2">
+                                        <span class="text-2xl font-bold" x-text="plan.is_free ? '免费' : ('¥' + plan.price)"></span>
+                                        <span class="text-gray-500 text-sm" x-text="plan.is_free ? '' : ('/' + plan.duration_days + '天')"></span>
+                                    </div>
+                                    <div class="mt-2 text-sm text-gray-600">最大记录数: <span x-text="plan.max_records"></span></div>
+                                    <div class="mt-1 text-sm text-gray-600">长度限制: <span x-text="plan.min_length + '-' + plan.max_length"></span></div>
+                                </div>
+                            </template>
+                            <div x-if="!loading && plans.length === 0" class="col-span-3 text-center py-8 text-gray-500">暂无数据</div>
+                        </div>
+                    </div>
+                </div>
+                <div x-show="currentRoute === 'orders'" class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">订单管理</h2>
+                    <div x-data="loadOrders()" x-init="init()">
+                        <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b">
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">ID</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">用户</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">套餐</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">金额</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">状态</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">创建时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="order in orders" :key="order.id">
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="py-3 px-4" x-text="order.id"></td>
+                                        <td class="py-3 px-4" x-text="order.username || '-'"></td>
+                                        <td class="py-3 px-4" x-text="order.plan_name || '-'"></td>
+                                        <td class="py-3 px-4 font-medium" x-text="'¥' + order.final_amount"></td>
+                                        <td class="py-3 px-4">
+                                            <span class="px-2 py-1 rounded text-xs" :class="order.status === 1 ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'" x-text="order.status === 1 ? '已支付' : '未支付'"></span>
+                                        </td>
+                                        <td class="py-3 px-4 text-sm text-gray-500" x-text="order.created_at"></td>
+                                    </tr>
+                                </template>
+                                <tr x-if="!loading && orders.length === 0">
+                                    <td colspan="6" class="py-8 text-center text-gray-500">暂无数据</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div x-show="currentRoute === 'settings'" class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">系统设置</h2>
+                    <div x-data="loadSettings()" x-init="init()">
+                        <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
+                        <div x-if="!loading" class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <span class="text-gray-700">站点名称</span>
+                                <span x-text="settings.site_name || '-'"></span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <span class="text-gray-700">站点描述</span>
+                                <span x-text="settings.site_description || '-'"></span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <span class="text-gray-700">注册开关</span>
+                                <span :class="settings.register_enabled === '1' ? 'text-green-600' : 'text-red-600'" x-text="settings.register_enabled === '1' ? '开启' : '关闭'"></span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <span class="text-gray-700">默认最大域名数</span>
+                                <span x-text="settings.default_max_domains || '5'"></span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <span class="text-gray-700">版本</span>
+                                <span x-text="settings.version || '-'"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
