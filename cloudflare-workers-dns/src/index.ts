@@ -271,21 +271,18 @@ const HTML_PAGES: Record<string, string> = `
 /host/apply.html
 `.trim().split('\n').filter(Boolean);
 
+const APP_CSS = "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}.nav-active{color:#4f46e5;border-bottom:2px solid #4f46e5}.card{transition:transform .2s,box-shadow .2s}.card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}.table-row:hover{background-color:#f9fafb}.spinner{border:3px solid #e5e7eb;border-top:3px solid #4f46e5;border-radius:50%;width:24px;height:24px;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}";
+
+const APP_JS = "const API_BASE='';function getToken(){return localStorage.getItem('token')}function setToken(t){localStorage.setItem('token',t)}function removeToken(){localStorage.removeItem('token')}async function apiRequest(u,o){o=o||{};const t=getToken(),h={'Content-Type':'application/json',...o.headers};if(t)h.Authorization='Bearer '+t;const r=await fetch(API_BASE+u,{...o,headers:h}),d=await r.json();if(d.code===401){removeToken();window.location.href='/login';throw new Error('Not logged in')}if(d.code>=400)throw new Error(d.message||'Request failed');return d}function checkAuth(){return{user:null,async init(){const t=getToken();if(!t)return;try{const d=await apiRequest('/api/auth/me');this.user=d.data}catch(e){removeToken()}},async logout(){removeToken();window.location.href='/login'}}}function loginForm(){return{account:'',password:'',error:'',loading:false,async submit(){this.error='';this.loading=true;try{const d=await apiRequest('/api/auth/login',{method:'POST',body:JSON.stringify({account:this.account,password:this.password})});setToken(d.data.token);window.location.href='/user'}catch(e){this.error=e.message}this.loading=false}}}function registerForm(){return{username:'',email:'',password:'',confirmPassword:'',error:'',loading:false,async submit(){this.error='';if(this.password!==this.confirmPassword){this.error='Passwords do not match';return}this.loading=true;try{const d=await apiRequest('/api/auth/register',{method:'POST',body:JSON.stringify({username:this.username,email:this.email,password:this.password})});setToken(d.data.token);window.location.href='/user'}catch(e){this.error=e.message}this.loading=false}}}function loadSubdomains(){return{subdomains:[],async init(){try{const d=await apiRequest('/api/user/domains');this.subdomains=d.data||[]}catch(e){console.error(e)}}}}function loadPlans(){return{plans:[],async init(){try{const d=await apiRequest('/api/plans');this.plans=d.data||[]}catch(e){console.error(e)}}}}function queryWhois(){return{domain:'',result:null,loading:false,async submit(){this.loading=true;try{const d=await apiRequest('/api/whois',{method:'POST',body:JSON.stringify({domain:this.domain})});this.result=d.data}catch(e){console.error(e)}this.loading=false}}}function loadStats(){return{stats:{users:0,domains:0,todayReg:0,balance:0},async init(){try{const d=await apiRequest('/api/admin/stats');if(d.data){this.stats=d.data}}catch(e){console.error(e)}}}}";
+
 const STATIC_FILES: Record<string, { content: string; contentType: string }> = {
   'css/style.css': {
     contentType: 'text/css',
-    content: `/* 六趣DNS - 自定义样式 */
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
-.nav-active { color: #4f46e5; border-bottom: 2px solid #4f46e5; }
-.card { transition: transform 0.2s, box-shadow 0.2s; }
-.card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-.table-row:hover { background-color: #f9fafb; }
-.spinner { border: 3px solid #e5e7eb; border-top: 3px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }`
+    content: APP_CSS,
   },
   'js/app.js': {
     contentType: 'application/javascript',
-    content: "const API_BASE='';function getToken(){return localStorage.getItem('token')}function setToken(t){localStorage.setItem('token',t)}function removeToken(){localStorage.removeItem('token')}async function apiRequest(u,o){o=o||{};const t=getToken(),h={'Content-Type':'application/json',...o.headers};if(t)h.Authorization='Bearer '+t;const r=await fetch(API_BASE+u,{...o,headers:h}),d=await r.json();if(d.code===401){removeToken();window.location.href='/login';throw new Error('Not logged in')}if(d.code>=400)throw new Error(d.message||'Request failed');return d}function checkAuth(){return{user:null,async init(){const t=getToken();if(!t)return;try{const d=await apiRequest('/api/auth/me');this.user=d.data}catch(e){removeToken()}},async logout(){removeToken();window.location.href='/login'}}}function loginForm(){return{account:'',password:'',error:'',loading:false,async submit(){this.error='';this.loading=true;try{const d=await apiRequest('/api/auth/login',{method:'POST',body:JSON.stringify({account:this.account,password:this.password})});setToken(d.data.token);window.location.href='/user'}catch(e){this.error=e.message}this.loading=false}}}function registerForm(){return{username:'',email:'',password:'',confirmPassword:'',error:'',loading:false,async submit(){this.error='';if(this.password!==this.confirmPassword){this.error='Passwords do not match';return}this.loading=true;try{const d=await apiRequest('/api/auth/register',{method:'POST',body:JSON.stringify({username:this.username,email:this.email,password:this.password})});setToken(d.data.token);window.location.href='/user'}catch(e){this.error=e.message}this.loading=false}}}function loadSubdomains(){return{subdomains:[],async init(){try{const d=await apiRequest('/api/user/domains');this.subdomains=d.data||[]}catch(e){console.error(e)}}}}function loadPlans(){return{plans:[],async init(){try{const d=await apiRequest('/api/plans');this.plans=d.data||[]}catch(e){console.error(e)}}}}function queryWhois(){return{domain:'',result:null,loading:false,async submit(){this.loading=true;try{const d=await apiRequest('/api/whois',{method:'POST',body:JSON.stringify({domain:this.domain})});this.result=d.data}catch(e){console.error(e)}this.loading=false}}}function loadStats(){return{async init(){try{await apiRequest('/api/admin/stats')}catch(e){console.error(e)}}}}",
+    content: APP_JS,
   },
 };
 
@@ -860,8 +857,17 @@ const PAGES: Record<string, string> = {
  * 提供 HTML 页面
  */
 async function serveHtmlPage(pageName: string): Promise<Response> {
-  const htmlContent = PAGES[pageName] || PAGES['index.html'];
-  
+  let htmlContent = PAGES[pageName] || PAGES['index.html'];
+
+  htmlContent = htmlContent.replace(
+    '<link rel="stylesheet" href="/static/css/style.css">',
+    '<style>' + APP_CSS + '</style>'
+  );
+  htmlContent = htmlContent.replace(
+    '<script defer src="/static/js/app.js"></script>',
+    '<script>' + APP_JS + '</script>'
+  );
+
   return new Response(htmlContent, {
     status: 200,
     headers: {
