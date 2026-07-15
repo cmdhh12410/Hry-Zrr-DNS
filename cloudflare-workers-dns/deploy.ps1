@@ -353,8 +353,11 @@ Write-Step "Initialize database"
 
 try {
     Write-Host "  -> Creating tables..."
-    cmd /c "npx wrangler d1 execute dns-db --remote --file=./migrations/0001_initial.sql 2>&1" | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "d1 execute failed" }
+    $d1Output = cmd /c "npx wrangler d1 execute dns-db --remote --file=./migrations/0001_initial.sql 2>&1" | Out-String
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  ERROR: $d1Output" -ForegroundColor Red
+        throw "d1 execute failed"
+    }
     Write-Ok "Tables created"
 } catch {
     Write-Fail "Failed to create tables"
@@ -362,8 +365,11 @@ try {
 
 try {
     Write-Host "  -> Importing seed data..."
-    cmd /c "npx wrangler d1 execute dns-db --remote --file=./migrations/0002_seed.sql 2>&1" | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "d1 execute failed" }
+    $d1Output = cmd /c "npx wrangler d1 execute dns-db --remote --file=./migrations/0002_seed.sql 2>&1" | Out-String
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  ERROR: $d1Output" -ForegroundColor Red
+        throw "d1 execute failed"
+    }
     Write-Ok "Seed data imported"
 } catch {
     Write-Fail "Failed to import seed data"
