@@ -290,9 +290,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
 };
 
 function registerStaticRoutes(router: Router) {
-  router.get('/static/*', async (request) => {
-    const url = new URL(request.url);
-    const filePath = url.pathname.replace('/static/', '');
+  router.get('/static/*', async (request, env, params) => {
+    const filePath = params['path'] || '';
 
     const file = STATIC_FILES[filePath];
     if (file) {
@@ -444,7 +443,7 @@ const PAGES: Record<string, string> = {
     <script defer src="/static/js/app.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <nav class="bg-white shadow-sm border-b" x-data="{ mobileMenu: false, user: null }" x-init="checkAuth()">
+    <nav class="bg-white shadow-sm border-b" x-data="checkAuth()">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
@@ -520,7 +519,7 @@ const PAGES: Record<string, string> = {
                 <h1 class="text-2xl font-bold text-indigo-600">六趣DNS</h1>
                 <p class="text-gray-500 mt-2">登录您的账户</p>
             </div>
-            <form x-data="{ account: '', password: '', error: '' }" @submit.prevent="login()">
+            <form x-data="loginForm()" @submit.prevent="submit()">
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">邮箱/用户名</label>
                     <input type="text" x-model="account" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="请输入邮箱或用户名">
@@ -559,7 +558,7 @@ const PAGES: Record<string, string> = {
                 <h1 class="text-2xl font-bold text-indigo-600">六趣DNS</h1>
                 <p class="text-gray-500 mt-2">创建新账户</p>
             </div>
-            <form x-data="{ username: '', email: '', password: '', confirmPassword: '', error: '' }" @submit.prevent="register()">
+            <form x-data="registerForm()" @submit.prevent="submit()">
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
                     <input type="text" x-model="username" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="请输入用户名">
@@ -600,7 +599,7 @@ const PAGES: Record<string, string> = {
     <script defer src="/static/js/app.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <nav class="bg-white shadow-sm border-b" x-data="{ user: null }" x-init="checkAuth()">
+    <nav class="bg-white shadow-sm border-b" x-data="checkAuth()">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
@@ -629,7 +628,7 @@ const PAGES: Record<string, string> = {
             <div class="md:col-span-3">
                 <div class="bg-white rounded-xl shadow-sm p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-6">我的域名</h2>
-                    <div x-data="loadSubdomains()" class="space-y-4">
+                    <div x-data="loadSubdomains()" x-init="init()" class="space-y-4">
                         <template x-if="subdomains.length === 0">
                             <div class="text-center py-12 text-gray-500">
                                 <div class="text-4xl mb-4">📭</div>
@@ -669,7 +668,7 @@ const PAGES: Record<string, string> = {
     <script defer src="/static/js/app.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <nav class="bg-white shadow-sm border-b" x-data="{ user: null }" x-init="checkAuth()">
+    <nav class="bg-white shadow-sm border-b" x-data="checkAuth()">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
@@ -703,7 +702,7 @@ const PAGES: Record<string, string> = {
                     <h2 class="text-xl font-semibold text-gray-900 mb-6">仪表盘</h2>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div class="bg-indigo-50 rounded-lg p-4 text-center">
-                            <div class="text-2xl font-bold text-indigo-600" x-data="{ count: 0 }" x-init="loadStats()">0</div>
+                            <div class="text-2xl font-bold text-indigo-600" x-data="loadStats()" x-init="init()">0</div>
                             <div class="text-sm text-gray-600">用户总数</div>
                         </div>
                         <div class="bg-green-50 rounded-lg p-4 text-center">
@@ -737,7 +736,7 @@ const PAGES: Record<string, string> = {
     <script defer src="/static/js/app.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <nav class="bg-white shadow-sm border-b" x-data="{ user: null }" x-init="checkAuth()">
+    <nav class="bg-white shadow-sm border-b" x-data="checkAuth()">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
@@ -768,7 +767,7 @@ const PAGES: Record<string, string> = {
             <p class="text-gray-600">选择适合您的域名套餐</p>
         </div>
         <div class="grid md:grid-cols-3 gap-8">
-            <div x-data="loadPlans()" class="space-y-4">
+            <div x-data="loadPlans()" x-init="init()" class="space-y-4">
                 <template x-for="plan in plans" :key="plan.id">
                     <div class="bg-white rounded-xl shadow-sm p-6 border-2" :class="plan.is_free ? 'border-gray-200' : 'border-indigo-500'">
                         <div class="text-center mb-6">
@@ -811,7 +810,7 @@ const PAGES: Record<string, string> = {
     <script defer src="/static/js/app.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <nav class="bg-white shadow-sm border-b" x-data="{ user: null }" x-init="checkAuth()">
+    <nav class="bg-white shadow-sm border-b" x-data="checkAuth()">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
@@ -842,7 +841,7 @@ const PAGES: Record<string, string> = {
                 <h1 class="text-2xl font-bold text-gray-900 mb-2">WHOIS查询</h1>
                 <p class="text-gray-500">查询域名的注册信息</p>
             </div>
-            <form x-data="{ domain: '', result: null, loading: false }" @submit.prevent="queryWhois()">
+            <form x-data="queryWhois()" @submit.prevent="submit()">
                 <div class="flex space-x-4">
                     <input type="text" x-model="domain" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="请输入域名，如 example.com">
                     <button type="submit" :disabled="loading" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium disabled:opacity-50">查询</button>

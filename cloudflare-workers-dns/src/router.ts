@@ -41,6 +41,17 @@ class Router {
   }
 
   private match(pattern: string, pathname: string): Record<string, string> | null {
+    // 支持通配符结尾，如 /static/* 匹配 /static/css/style.css
+    if (pattern.endsWith('/*')) {
+      const prefix = pattern.slice(0, -2); // 去掉 /*
+      if (pathname === prefix || pathname.startsWith(prefix + '/')) {
+        const params: Record<string, string> = {};
+        params['path'] = pathname.slice(prefix.length + 1);
+        return params;
+      }
+      return null;
+    }
+
     const patternParts = pattern.split('/');
     const pathParts = pathname.split('/');
 
