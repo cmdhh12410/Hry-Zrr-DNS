@@ -65,6 +65,10 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_users_role;
+DROP INDEX IF EXISTS idx_users_status;
+DROP INDEX IF EXISTS idx_users_host_status;
+DROP INDEX IF EXISTS idx_users_invite_code;
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_status ON users(status);
 CREATE INDEX idx_users_host_status ON users(host_status);
@@ -86,6 +90,8 @@ CREATE TABLE IF NOT EXISTS dns_channels (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_dns_channels_owner;
+DROP INDEX IF EXISTS idx_dns_channels_status;
 CREATE INDEX idx_dns_channels_owner ON dns_channels(owner_id);
 CREATE INDEX idx_dns_channels_status ON dns_channels(status);
 
@@ -109,6 +115,9 @@ CREATE TABLE IF NOT EXISTS domains (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_domains_owner;
+DROP INDEX IF EXISTS idx_domains_channel;
+DROP INDEX IF EXISTS idx_domains_status;
 CREATE INDEX idx_domains_owner ON domains(owner_id);
 CREATE INDEX idx_domains_channel ON domains(dns_channel_id);
 CREATE INDEX idx_domains_status ON domains(status);
@@ -141,6 +150,8 @@ CREATE TABLE IF NOT EXISTS plans (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_plans_owner;
+DROP INDEX IF EXISTS idx_plans_status;
 CREATE INDEX idx_plans_owner ON plans(owner_id);
 CREATE INDEX idx_plans_status ON plans(status);
 
@@ -153,6 +164,7 @@ CREATE TABLE IF NOT EXISTS plan_domains (
     PRIMARY KEY (plan_id, domain_id)
 );
 
+DROP INDEX IF EXISTS idx_plan_domains_domain;
 CREATE INDEX idx_plan_domains_domain ON plan_domains(domain_id);
 
 -- ============================================================
@@ -181,6 +193,10 @@ CREATE TABLE IF NOT EXISTS subdomains (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_subdomains_user;
+DROP INDEX IF EXISTS idx_subdomains_domain;
+DROP INDEX IF EXISTS idx_subdomains_status;
+DROP INDEX IF EXISTS idx_subdomains_expires;
 CREATE INDEX idx_subdomains_user ON subdomains(user_id);
 CREATE INDEX idx_subdomains_domain ON subdomains(domain_id);
 CREATE INDEX idx_subdomains_status ON subdomains(status);
@@ -203,6 +219,7 @@ CREATE TABLE IF NOT EXISTS dns_records (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_dns_records_subdomain;
 CREATE INDEX idx_dns_records_subdomain ON dns_records(subdomain_id);
 
 -- ============================================================
@@ -222,6 +239,7 @@ CREATE TABLE IF NOT EXISTS purchase_records (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_purchase_records_user;
 CREATE INDEX idx_purchase_records_user ON purchase_records(user_id);
 
 -- ============================================================
@@ -239,6 +257,8 @@ CREATE TABLE IF NOT EXISTS redeem_codes (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_redeem_codes_code;
+DROP INDEX IF EXISTS idx_redeem_codes_status;
 CREATE INDEX idx_redeem_codes_code ON redeem_codes(code);
 CREATE INDEX idx_redeem_codes_status ON redeem_codes(status);
 
@@ -265,6 +285,7 @@ CREATE TABLE IF NOT EXISTS coupons (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_coupons_code;
 CREATE INDEX idx_coupons_code ON coupons(code);
 
 -- ============================================================
@@ -281,6 +302,8 @@ CREATE TABLE IF NOT EXISTS coupon_usages (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_coupon_usages_coupon;
+DROP INDEX IF EXISTS idx_coupon_usages_user;
 CREATE INDEX idx_coupon_usages_coupon ON coupon_usages(coupon_id);
 CREATE INDEX idx_coupon_usages_user ON coupon_usages(user_id);
 
@@ -334,6 +357,7 @@ CREATE TABLE IF NOT EXISTS email_verifications (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_email_verifications_email;
 CREATE INDEX idx_email_verifications_email ON email_verifications(email);
 
 -- ============================================================
@@ -350,6 +374,7 @@ CREATE TABLE IF NOT EXISTS sms_verifications (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_sms_verifications_phone;
 CREATE INDEX idx_sms_verifications_phone ON sms_verifications(phone);
 
 -- ============================================================
@@ -366,6 +391,8 @@ CREATE TABLE IF NOT EXISTS operation_logs (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_operation_logs_user;
+DROP INDEX IF EXISTS idx_operation_logs_created;
 CREATE INDEX idx_operation_logs_user ON operation_logs(user_id);
 CREATE INDEX idx_operation_logs_created ON operation_logs(created_at);
 
@@ -385,6 +412,8 @@ CREATE TABLE IF NOT EXISTS tickets (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_tickets_from_user;
+DROP INDEX IF EXISTS idx_tickets_status;
 CREATE INDEX idx_tickets_from_user ON tickets(from_user_id);
 CREATE INDEX idx_tickets_status ON tickets(status);
 
@@ -400,6 +429,7 @@ CREATE TABLE IF NOT EXISTS ticket_replies (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_ticket_replies_ticket;
 CREATE INDEX idx_ticket_replies_ticket ON ticket_replies(ticket_id);
 
 -- ============================================================
@@ -416,6 +446,8 @@ CREATE TABLE IF NOT EXISTS point_records (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_point_records_user;
+DROP INDEX IF EXISTS idx_point_records_type;
 CREATE INDEX idx_point_records_user ON point_records(user_id);
 CREATE INDEX idx_point_records_type ON point_records(type);
 
@@ -470,6 +502,9 @@ CREATE TABLE IF NOT EXISTS domain_transfers (
     completed_at TEXT
 );
 
+DROP INDEX IF EXISTS idx_domain_transfers_subdomain;
+DROP INDEX IF EXISTS idx_domain_transfers_from;
+DROP INDEX IF EXISTS idx_domain_transfers_to;
 CREATE INDEX idx_domain_transfers_subdomain ON domain_transfers(subdomain_id);
 CREATE INDEX idx_domain_transfers_from ON domain_transfers(from_user_id);
 CREATE INDEX idx_domain_transfers_to ON domain_transfers(to_user_id);
@@ -518,6 +553,7 @@ CREATE TABLE IF NOT EXISTS email_accounts (
     updated_at TEXT
 );
 
+DROP INDEX IF EXISTS idx_email_accounts_enabled;
 CREATE INDEX idx_email_accounts_enabled ON email_accounts(enabled, priority);
 
 -- ============================================================
@@ -571,6 +607,8 @@ CREATE TABLE IF NOT EXISTS user_activities (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_user_activities_user;
+DROP INDEX IF EXISTS idx_user_activities_type;
 CREATE INDEX idx_user_activities_user ON user_activities(user_id);
 CREATE INDEX idx_user_activities_type ON user_activities(activity_type);
 
@@ -605,6 +643,8 @@ CREATE TABLE IF NOT EXISTS free_plan_applications (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_free_plan_app_user;
+DROP INDEX IF EXISTS idx_free_plan_app_status;
 CREATE INDEX idx_free_plan_app_user ON free_plan_applications(user_id);
 CREATE INDEX idx_free_plan_app_status ON free_plan_applications(status);
 
@@ -623,6 +663,7 @@ CREATE TABLE IF NOT EXISTS host_applications (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_host_applications_user;
 CREATE INDEX idx_host_applications_user ON host_applications(user_id);
 
 -- ============================================================
@@ -640,6 +681,7 @@ CREATE TABLE IF NOT EXISTS host_transactions (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_host_transactions_host;
 CREATE INDEX idx_host_transactions_host ON host_transactions(host_id);
 
 -- ============================================================
@@ -661,6 +703,7 @@ CREATE TABLE IF NOT EXISTS host_withdrawals (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+DROP INDEX IF EXISTS idx_host_withdrawals_host;
 CREATE INDEX idx_host_withdrawals_host ON host_withdrawals(host_id);
 
 -- ============================================================
@@ -696,6 +739,8 @@ CREATE TABLE IF NOT EXISTS magic_link_tokens (
     used_ip TEXT
 );
 
+DROP INDEX IF EXISTS idx_magic_link_token;
+DROP INDEX IF EXISTS idx_magic_link_expires;
 CREATE INDEX idx_magic_link_token ON magic_link_tokens(token);
 CREATE INDEX idx_magic_link_expires ON magic_link_tokens(expires_at);
 
@@ -746,5 +791,7 @@ CREATE TABLE IF NOT EXISTS cron_logs (
     duration INTEGER
 );
 
+DROP INDEX IF EXISTS idx_cron_logs_task;
+DROP INDEX IF EXISTS idx_cron_logs_status;
 CREATE INDEX idx_cron_logs_task ON cron_logs(task_id);
 CREATE INDEX idx_cron_logs_status ON cron_logs(status);
