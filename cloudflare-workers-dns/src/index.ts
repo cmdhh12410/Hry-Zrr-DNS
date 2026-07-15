@@ -697,21 +697,21 @@ const PAGES: Record<string, string> = {
             <div class="md:col-span-3">
                 <div class="bg-white rounded-xl shadow-sm p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-6">仪表盘</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" x-data="loadStats()" x-init="init()">
                         <div class="bg-indigo-50 rounded-lg p-4 text-center">
-                            <div class="text-2xl font-bold text-indigo-600" x-data="loadStats()" x-init="init()">0</div>
+                            <div class="text-2xl font-bold text-indigo-600" x-text="stats.users">0</div>
                             <div class="text-sm text-gray-600">用户总数</div>
                         </div>
                         <div class="bg-green-50 rounded-lg p-4 text-center">
-                            <div class="text-2xl font-bold text-green-600">0</div>
+                            <div class="text-2xl font-bold text-green-600" x-text="stats.domains">0</div>
                             <div class="text-sm text-gray-600">域名总数</div>
                         </div>
                         <div class="bg-orange-50 rounded-lg p-4 text-center">
-                            <div class="text-2xl font-bold text-orange-600">0</div>
+                            <div class="text-2xl font-bold text-orange-600" x-text="stats.todayReg">0</div>
                             <div class="text-sm text-gray-600">今日注册</div>
                         </div>
                         <div class="bg-blue-50 rounded-lg p-4 text-center">
-                            <div class="text-2xl font-bold text-blue-600">0</div>
+                            <div class="text-2xl font-bold text-blue-600" x-text="stats.balance">0</div>
                             <div class="text-sm text-gray-600">系统余额</div>
                         </div>
                     </div>
@@ -859,20 +859,22 @@ const PAGES: Record<string, string> = {
 async function serveHtmlPage(pageName: string): Promise<Response> {
   let htmlContent = PAGES[pageName] || PAGES['index.html'];
 
-  htmlContent = htmlContent.replace(
-    '<link rel="stylesheet" href="/static/css/style.css">',
-    '<style>' + APP_CSS + '</style>'
-  );
-  htmlContent = htmlContent.replace(
-    '<script defer src="/static/js/app.js"></script>',
-    '<script>' + APP_JS + '</script>'
-  );
+  // 删除外部 CSS 引用（可能有不同的格式）
+  htmlContent = htmlContent.replace(/<link[^>]*href="\/static\/css\/style\.css"[^>]*>/gi, '');
+  // 删除外部 JS 引用
+  htmlContent = htmlContent.replace(/<script[^>]*src="\/static\/js\/app\.js"[^>]*><\/script>/gi, '');
+
+  // 在 </head> 之前插入内联 CSS 和 JS
+  const inlineBlock = '<style>' + APP_CSS + '</style>\n<script>' + APP_JS + '</script>';
+  htmlContent = htmlContent.replace('</head>', inlineBlock + '\n</head>');
 
   return new Response(htmlContent, {
     status: 200,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'no-cache',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     },
   });
 }
