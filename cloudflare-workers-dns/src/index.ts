@@ -271,30 +271,41 @@ const HTML_PAGES: Record<string, string> = `
 /host/apply.html
 `.trim().split('\n').filter(Boolean);
 
+const STATIC_FILES: Record<string, { content: string; contentType: string }> = {
+  'css/style.css': {
+    contentType: 'text/css',
+    content: `/* 六趣DNS - 自定义样式 */
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+.nav-active { color: #4f46e5; border-bottom: 2px solid #4f46e5; }
+.card { transition: transform 0.2s, box-shadow 0.2s; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.table-row:hover { background-color: #f9fafb; }
+.spinner { border: 3px solid #e5e7eb; border-top: 3px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }`
+  },
+  'js/app.js': {
+    contentType: 'application/javascript',
+    content: `const API_BASE='';function getToken(){return localStorage.getItem('token')}function setToken(t){localStorage.setItem('token',t)}function removeToken(){localStorage.removeItem('token')}async function apiRequest(u,o={}){const t=getToken(),h={'Content-Type':'application/json',...o.headers};if(t)h.Authorization=\`Bearer \${t}\`;const r=await fetch(API_BASE+u,{...o,headers:h}),d=await r.json();if(d.code===401){removeToken();window.location.href='/login';throw new Error('未登录')}if(d.code>=400)throw new Error(d.message||'请求失败');return d}function checkAuth(){return{user:null,async init(){const t=getToken();if(!t)return;try{const d=await apiRequest('/api/auth/me');this.user=d.data}catch{removeToken()}},async logout(){removeToken();window.location.href='/login'}}}function loginForm(){return{account:'',password:'',error:'',loading:false,async submit(){this.error='';this.loading=true;try{const d=await apiRequest('/api/auth/login',{method:'POST',body:JSON.stringify({account:this.account,password:this.password})});setToken(d.data.token);window.location.href='/user'}catch(e){this.error=e.message}this.loading=false}}}function registerForm(){return{username:'',email:'',password:'',confirmPassword:'',error:'',loading:false,async submit(){this.error='';if(this.password!==this.confirmPassword){this.error='两次密码不一致';return}this.loading=true;try{await apiRequest('/api/auth/register',{method:'POST',body:JSON.stringify({username:this.username,email:this.email,password:this.password})});window.location.href='/login'}catch(e){this.error=e.message}this.loading=false}}}function loadSubdomains(){return{subdomains:[],async init(){try{const d=await apiRequest('/api/user/domains');this.subdomains=d.data||[]}catch(e){console.error(e)}}}}function loadPlans(){return{plans:[],async init(){try{const d=await apiRequest('/api/plans');this.plans=d.data||[]}catch(e){console.error(e)}}}}function queryWhois(){return{domain:'',result:null,loading:false,async submit(){this.loading=true;try{const d=await apiRequest('/api/whois',{method:'POST',body:JSON.stringify({domain:this.domain})});this.result=d.data}catch(e){console.error(e)}this.loading=false}}}function loadStats(){return{async init(){try{await apiRequest('/api/admin/stats')}catch(e){console.error(e)}}}`
+  }
+};
+
 function registerStaticRoutes(router: Router) {
-  // 静态资源文件
   router.get('/static/*', async (request) => {
     const url = new URL(request.url);
     const filePath = url.pathname.replace('/static/', '');
 
-    try {
-      // 尝试从 KV 缓存获取
-      // 实际部署时，静态文件应部署到 Workers Sites 或使用 ASSETS binding
-      const ext = '.' + (filePath.split('.').pop() || '');
-      const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-
-      // 返回简单的静态文件响应
-      // 在生产环境中，应使用 Cloudflare Pages 或 Workers Assets 来提供静态文件
-      return new Response(`/* Static file: ${filePath} */`, {
+    const file = STATIC_FILES[filePath];
+    if (file) {
+      return new Response(file.content, {
         status: 200,
         headers: {
-          'Content-Type': contentType,
+          'Content-Type': file.contentType,
           'Cache-Control': 'public, max-age=86400',
         },
       });
-    } catch {
-      return new Response('File not found', { status: 404 });
     }
+
+    return new Response('File not found', { status: 404 });
   });
 }
 
@@ -427,9 +438,9 @@ const PAGES: Record<string, string> = {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>六趣DNS - 域名分发系统</title>
-    <link rel="stylesheet" href="/static/css/tailwind.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/style.css">
-    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3"></script>
     <script defer src="/static/js/app.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -497,9 +508,9 @@ const PAGES: Record<string, string> = {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录 - 六趣DNS</title>
-    <link rel="stylesheet" href="/static/css/tailwind.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/style.css">
-    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3"></script>
     <script defer src="/static/js/app.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center">
@@ -536,9 +547,9 @@ const PAGES: Record<string, string> = {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>注册 - 六趣DNS</title>
-    <link rel="stylesheet" href="/static/css/tailwind.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/style.css">
-    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3"></script>
     <script defer src="/static/js/app.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center">
@@ -583,9 +594,9 @@ const PAGES: Record<string, string> = {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>用户中心 - 六趣DNS</title>
-    <link rel="stylesheet" href="/static/css/tailwind.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/style.css">
-    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3"></script>
     <script defer src="/static/js/app.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -652,9 +663,9 @@ const PAGES: Record<string, string> = {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理后台 - 六趣DNS</title>
-    <link rel="stylesheet" href="/static/css/tailwind.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/style.css">
-    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3"></script>
     <script defer src="/static/js/app.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -720,9 +731,9 @@ const PAGES: Record<string, string> = {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>套餐 - 六趣DNS</title>
-    <link rel="stylesheet" href="/static/css/tailwind.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/style.css">
-    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3"></script>
     <script defer src="/static/js/app.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -794,9 +805,9 @@ const PAGES: Record<string, string> = {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WHOIS查询 - 六趣DNS</title>
-    <link rel="stylesheet" href="/static/css/tailwind.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/style.css">
-    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3"></script>
     <script defer src="/static/js/app.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
