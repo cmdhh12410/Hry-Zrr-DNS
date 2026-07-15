@@ -153,13 +153,53 @@ if (-not (Test-Path "node_modules")) {
 Write-Step "Create Cloudflare resources"
 
 # Get Account ID from wrangler whoami
-$whoamiRaw = cmd /c "npx wrangler whoami 2>&1"
+$whoamiRaw = cmd /c "npx wrangler whoami 2>&1" | Out-String
 $accountId = $null
-if ($whoamiRaw -match 'Account ID\s+([a-f0-9]+)') {
-    $accountId = $matches[1]
+
+# Try multiple patterns for different wrangler versions
+$patterns = @(
+    'Account ID\s+([a-f0-9]+)',
+    'account_id\s*[:=]\s*"([a-f0-9]+)"',
+    '"id"\s*:\s*"([a-f0-9]+)"',
+    '([a-f0-9]{32})'
+)
+
+foreach ($pattern in $patterns) {
+    if ($whoamiRaw -match $pattern) {
+        $accountId = $matches[1]
+        break
+    }
 }
+
+# If still not found, try wrangler config get
 if (-not $accountId) {
-    Write-Fail "Cannot extract Cloudflare Account ID from wrangler whoami"
+    $configRaw = cmd /c "npx wrangler config get account_id 2>&1" | Out-String
+    foreach ($pattern in $patterns) {
+        if ($configRaw -match $pattern) {
+            $accountId = $matches[1]
+            break
+        }
+    }
+}
+
+if (-not $accountId) {
+    Write-Host ""
+    Write-Host "  WARN Cannot automatically detect Cloudflare Account ID." -ForegroundColor Yellow
+    Write-Host "  Your wrangler whoami output:" -ForegroundColor Yellow
+    Write-Host "  ----------------------------" -ForegroundColor Yellow
+    Write-Host $whoamiRaw -ForegroundColor Gray
+    Write-Host "  ----------------------------" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  Please get your Account ID from:" -ForegroundColor Cyan
+    Write-Host "    https://dash.cloudflare.com/" -ForegroundColor Cyan
+    Write-Host ""
+    $userAccountId = Read-Host "  Enter Cloudflare Account ID (32-character hex)"
+    if ($userAccountId -match '^[a-f0-9]{32}$') {
+        $accountId = $userAccountId
+        Write-Host "  OK Using provided Account ID" -ForegroundColor Green
+    } else {
+        Write-Fail "Invalid Account ID format"
+    }
 }
 
 $apiHeaders = @{
