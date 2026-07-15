@@ -152,53 +152,37 @@ if (-not (Test-Path "node_modules")) {
 # ============================================================
 Write-Step "Create Cloudflare resources"
 
-Write-Host "  -> Creating D1 database..."
-$d1Id = $null
-
-function Find-D1Id {
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = "npx"
-    $psi.Arguments = "wrangler d1 list"
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
-    $proc = New-Object System.Diagnostics.Process
-    $proc.StartInfo = $psi
-    $proc.Start() | Out-Null
-    $stdout = $proc.StandardOutput.ReadToEnd()
-    $stderr = $proc.StandardError.ReadToEnd()
-    $proc.WaitForExit()
-    $raw = $stdout + "`n" + $stderr
-    $lines = $raw -split "`n"
-    foreach ($line in $lines) {
-        if ($line -match 'dns-db' -and $line -match '([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})') {
-            return $matches[1]
-        }
-    }
-    return $null
+# Get Account ID from wrangler whoami
+$whoamiRaw = cmd /c "npx wrangler whoami 2>&1"
+$accountId = $null
+if ($whoamiRaw -match 'Account ID\s+([a-f0-9]+)') {
+    $accountId = $matches[1]
+}
+if (-not $accountId) {
+    Write-Fail "Cannot extract Cloudflare Account ID from wrangler whoami"
 }
 
-$d1Id = Find-D1Id
+$apiHeaders = @{
+    "Authorization" = "Bearer $env:CLOUDFLARE_API_TOKEN"
+    "Content-Type" = "application/json"
+}
 
-if ($d1Id) {
-    Write-Host "  SKIP D1 database 'dns-db' already exists" -ForegroundColor Yellow
-} else {
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = "npx"
-    $psi.Arguments = "wrangler d1 create dns-db"
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
-    $proc = New-Object System.Diagnostics.Process
-    $proc.StartInfo = $psi
-    $proc.Start() | Out-Null
-    $stdout = $proc.StandardOutput.ReadToEnd()
-    $stderr = $proc.StandardError.ReadToEnd()
-    $proc.WaitForExit()
-    $d1Output = $stdout + "`n" + $stderr
-    
+# --- D1 Database ---
+Write-Host "  -> Creating D1 database..."
+$d1Id = $null
+try {
+    $d1Resp = Invoke-RestMethod -Uri "https://api.cloudflare.com/client/v4/accounts/$accountId/d1/database" -Headers $apiHeaders -Method GET
+    $d1Db = $d1Resp.result | Where-Object { $_.name -eq 'dns-db' }
+    if ($d1Db) {
+        $d1Id = $d1Db.uuid
+        Write-Host "  SKIP D1 database 'dns-db' already exists" -ForegroundColor Yellow
+    }
+} catch {
+    Write-Host "  WARN D1 API list failed, trying CLI..." -ForegroundColor Yellow
+}
+
+if (-not $d1Id) {
+    $d1Output = cmd /c "npx wrangler d1 create dns-db 2>&1" | Out-String
     $lines = $d1Output -split "`n"
     foreach ($line in $lines) {
         if ($line -match 'database_id\s*=\s*"([^"]+)"') {
@@ -222,85 +206,94 @@ if ($d1Id) {
 }
 Write-Host "  Database ID: $d1Id" -ForegroundColor Yellow
 
+# --- KV Namespace ---
 Write-Host "  -> Creating KV namespace..."
 $kvId = $null
 
-function Find-KvId {
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = "npx"
-    $psi.Arguments = "wrangler kv:namespace list"
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
-    $proc = New-Object System.Diagnostics.Process
-    $proc.StartInfo = $psi
-    $proc.Start() | Out-Null
-    $stdout = $proc.StandardOutput.ReadToEnd()
-    $stderr = $proc.StandardError.ReadToEnd()
-    $proc.WaitForExit()
-    $raw = $stdout + "`n" + $stderr
-    $lines = $raw -split "`n"
-    $lastId = $null
-    foreach ($line in $lines) {
-        if ($line -match '([a-f0-9]{32})') {
-            $lastId = $matches[1]
+# Helper: try to get KV ID from API with relaxed matching
+function Get-KvIdFromApi {
+    try {
+        $resp = Invoke-RestMethod -Uri "https://api.cloudflare.com/client/v4/accounts/$accountId/storage/kv/namespaces" -Headers $apiHeaders -Method GET
+        if ($resp.result -and $resp.result.Count -gt 0) {
+            # Prefer exact match, then any KV namespace
+            $ns = $resp.result | Where-Object { $_.title -eq 'dns-distribution-system-KV' -or $_.title -eq 'KV' } | Select-Object -First 1
+            if (-not $ns) { $ns = $resp.result | Select-Object -First 1 }
+            if ($ns) { return $ns.id }
         }
-        if ($line -match 'dns-distribution-system-KV' -or $line -match '"KV"') {
-            if ($lastId) { return $lastId }
-        }
-    }
-    if ($lastId) { return $lastId }
+    } catch {}
     return $null
 }
 
-$kvId = Find-KvId
+# Helper: try to read existing KV ID from wrangler.toml
+function Get-KvIdFromToml {
+    try {
+        $toml = Get-Content "wrangler.toml" -Raw -Encoding UTF8
+        if ($toml -match 'id\s*=\s*"([a-f0-9]{32})"') { return $matches[1] }
+    } catch {}
+    return $null
+}
 
+# 1. Try API list first
+$kvId = Get-KvIdFromApi
 if ($kvId) {
-    Write-Host "  SKIP KV namespace already exists" -ForegroundColor Yellow
-} else {
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = "npx"
-    $psi.Arguments = "wrangler kv:namespace create KV"
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
-    $proc = New-Object System.Diagnostics.Process
-    $proc.StartInfo = $psi
-    $proc.Start() | Out-Null
-    $stdout = $proc.StandardOutput.ReadToEnd()
-    $stderr = $proc.StandardError.ReadToEnd()
-    $exitCode = $proc.ExitCode
-    $proc.WaitForExit()
-    $kvOutput = $stdout + "`n" + $stderr
-    
-    if ($exitCode -ne 0 -and $kvOutput -match 'already exists') {
-        $kvId = Find-KvId
+    Write-Host "  SKIP KV namespace already exists (found via API)" -ForegroundColor Yellow
+}
+
+# 2. If not found, try create
+if (-not $kvId) {
+    $kvOutput = cmd /c "npx wrangler kv:namespace create KV 2>&1" | Out-String
+
+    # 2a. Already exists is OK, try to get ID again
+    if ($kvOutput -match 'already exists') {
+        Write-Host "  SKIP KV namespace already exists (detected from CLI)" -ForegroundColor Yellow
+        $kvId = Get-KvIdFromApi
+        if (-not $kvId) { $kvId = Get-KvIdFromToml }
     }
-    if (-not $kvId) {
+    # 2b. Try extract ID from successful create output
+    else {
         $lines = $kvOutput -split "`n"
         foreach ($line in $lines) {
-            if ($line -match 'id\s*=\s*"([^"]+)"') {
-                $kvId = $matches[1]
-                break
+            if ($line -match 'id\s*=\s*"([^"]+)"') { $kvId = $matches[1]; break }
+        }
+        if (-not $kvId) {
+            foreach ($line in $lines) {
+                if ($line -match '([a-f0-9]{32})') { $kvId = $matches[1]; break }
             }
         }
-    }
-    if (-not $kvId) {
-        foreach ($line in $lines) {
-            if ($line -match '([a-f0-9]{32})') {
-                $kvId = $matches[1]
-                break
-            }
+        if ($kvId) {
+            Write-Host "  OK KV namespace created" -ForegroundColor Green
         }
     }
-    if (-not $kvId) {
-        Write-Host $kvOutput
-        Write-Fail "Failed to create KV namespace"
-    }
-    Write-Host "  OK KV namespace created" -ForegroundColor Green
 }
+
+# 3. Final fallback: read from existing wrangler.toml
+if (-not $kvId) {
+    $kvId = Get-KvIdFromToml
+    if ($kvId) {
+        Write-Host "  SKIP KV namespace ID loaded from wrangler.toml" -ForegroundColor Yellow
+    }
+}
+
+# 4. If still no ID, prompt user instead of failing
+if (-not $kvId) {
+    Write-Host ""
+    Write-Host "  WARN Could not automatically detect KV namespace ID." -ForegroundColor Yellow
+    Write-Host "  This usually happens when the KV namespace already exists" -ForegroundColor Yellow
+    Write-Host "  but the API Token does not have permission to list namespaces." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  Please get your KV namespace ID from:" -ForegroundColor Cyan
+    Write-Host "    https://dash.cloudflare.com/$accountId/workers/kv/namespaces" -ForegroundColor Cyan
+    Write-Host ""
+    $userKvId = Read-Host "  Enter KV namespace ID (32-character hex) or press Enter to skip"
+    if ($userKvId -match '^[a-f0-9]{32}$') {
+        $kvId = $userKvId
+        Write-Host "  OK Using provided KV ID" -ForegroundColor Green
+    } else {
+        Write-Host "  WARN Invalid or empty KV ID. You must manually update wrangler.toml later." -ForegroundColor Yellow
+        $kvId = "KV_ID_PLACEHOLDER"
+    }
+}
+
 Write-Host "  KV ID: $kvId" -ForegroundColor Yellow
 
 Write-Host "  -> Updating wrangler.toml..."
