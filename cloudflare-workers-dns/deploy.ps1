@@ -156,8 +156,20 @@ Write-Host "  -> Creating D1 database..."
 $d1Id = $null
 
 function Find-D1Id {
-    $output = cmd /c "npx wrangler d1 list 2>&1"
-    $raw = $output | Out-String
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = "npx"
+    $psi.Arguments = "wrangler d1 list"
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $proc = New-Object System.Diagnostics.Process
+    $proc.StartInfo = $psi
+    $proc.Start() | Out-Null
+    $stdout = $proc.StandardOutput.ReadToEnd()
+    $stderr = $proc.StandardError.ReadToEnd()
+    $proc.WaitForExit()
+    $raw = $stdout + "`n" + $stderr
     $lines = $raw -split "`n"
     foreach ($line in $lines) {
         if ($line -match 'dns-db' -and $line -match '([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})') {
@@ -172,7 +184,21 @@ $d1Id = Find-D1Id
 if ($d1Id) {
     Write-Host "  SKIP D1 database 'dns-db' already exists" -ForegroundColor Yellow
 } else {
-    $d1Output = cmd /c "npx wrangler d1 create dns-db 2>&1" | Out-String
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = "npx"
+    $psi.Arguments = "wrangler d1 create dns-db"
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $proc = New-Object System.Diagnostics.Process
+    $proc.StartInfo = $psi
+    $proc.Start() | Out-Null
+    $stdout = $proc.StandardOutput.ReadToEnd()
+    $stderr = $proc.StandardError.ReadToEnd()
+    $proc.WaitForExit()
+    $d1Output = $stdout + "`n" + $stderr
+    
     $lines = $d1Output -split "`n"
     foreach ($line in $lines) {
         if ($line -match 'database_id\s*=\s*"([^"]+)"') {
@@ -200,8 +226,20 @@ Write-Host "  -> Creating KV namespace..."
 $kvId = $null
 
 function Find-KvId {
-    $output = cmd /c "npx wrangler kv:namespace list 2>&1"
-    $raw = $output | Out-String
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = "npx"
+    $psi.Arguments = "wrangler kv:namespace list"
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $proc = New-Object System.Diagnostics.Process
+    $proc.StartInfo = $psi
+    $proc.Start() | Out-Null
+    $stdout = $proc.StandardOutput.ReadToEnd()
+    $stderr = $proc.StandardError.ReadToEnd()
+    $proc.WaitForExit()
+    $raw = $stdout + "`n" + $stderr
     $lines = $raw -split "`n"
     $lastId = $null
     foreach ($line in $lines) {
@@ -221,8 +259,23 @@ $kvId = Find-KvId
 if ($kvId) {
     Write-Host "  SKIP KV namespace already exists" -ForegroundColor Yellow
 } else {
-    $kvOutput = cmd /c "npx wrangler kv:namespace create KV 2>&1" | Out-String
-    if ($kvOutput -match 'already exists') {
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = "npx"
+    $psi.Arguments = "wrangler kv:namespace create KV"
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $proc = New-Object System.Diagnostics.Process
+    $proc.StartInfo = $psi
+    $proc.Start() | Out-Null
+    $stdout = $proc.StandardOutput.ReadToEnd()
+    $stderr = $proc.StandardError.ReadToEnd()
+    $exitCode = $proc.ExitCode
+    $proc.WaitForExit()
+    $kvOutput = $stdout + "`n" + $stderr
+    
+    if ($exitCode -ne 0 -and $kvOutput -match 'already exists') {
         $kvId = Find-KvId
     }
     if (-not $kvId) {
