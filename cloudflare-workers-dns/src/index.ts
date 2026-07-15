@@ -420,31 +420,8 @@ function registerPageRoutes(router: Router) {
   });
 }
 
-/**
- * 提供 HTML 页面
- * 在实际部署时，这些页面可以部署到 Cloudflare Pages 或使用 Workers Sites
- */
-async function serveHtmlPage(pageName: string): Promise<Response> {
-  // 在开发环境中，HTML 页面通过 import 方式内联
-  // 在生产环境中，使用 Workers Assets 或 Pages 来提供静态文件
-  const htmlContent = getPageContent(pageName);
-
-  return new Response(htmlContent, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'no-cache',
-    },
-  });
-}
-
-/**
- * 获取页面内容
- * 在生产环境中，这里应该从 Workers Sites 或 KV 中读取
- */
-function getPageContent(pageName: string): string {
-  // 基础 HTML 模板
-  const baseHTML = `<!DOCTYPE html>
+const PAGES: Record<string, string> = {
+  'index.html': `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -456,15 +433,430 @@ function getPageContent(pageName: string): string {
     <script defer src="/static/js/app.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <div id="app" class="max-w-7xl mx-auto px-4 py-8">
+    <nav class="bg-white shadow-sm border-b" x-data="{ mobileMenu: false, user: null }" x-init="checkAuth()">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-xl font-bold text-indigo-600">六趣DNS</a>
+                    <div class="hidden md:flex ml-10 space-x-4">
+                        <a href="/" class="px-3 py-2 text-gray-700 hover:text-indigo-600">首页</a>
+                        <a href="/pricing" class="px-3 py-2 text-gray-700 hover:text-indigo-600">套餐</a>
+                        <a href="/whois" class="px-3 py-2 text-gray-700 hover:text-indigo-600">WHOIS</a>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-4">
+                    <template x-if="!user">
+                        <div class="space-x-2">
+                            <a href="/login" class="px-4 py-2 text-gray-700 hover:text-indigo-600">登录</a>
+                            <a href="/register" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">注册</a>
+                        </div>
+                    </template>
+                    <template x-if="user">
+                        <div class="flex items-center space-x-4">
+                            <a href="/user" class="text-gray-700 hover:text-indigo-600" x-text="user.username"></a>
+                            <span class="text-sm text-gray-500" x-text="'余额: ¥' + user.balance"></span>
+                            <button @click="logout()" class="text-red-500 hover:text-red-700 text-sm">退出</button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <main class="max-w-7xl mx-auto px-4 py-8">
         <div class="text-center py-16">
-            <div class="spinner mx-auto mb-4"></div>
-            <p class="text-gray-500">正在加载页面 ${pageName}...</p>
-            <p class="text-sm text-gray-400 mt-2">请确保已配置 Cloudflare Workers + D1 + KV</p>
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">免费二级域名分发系统</h1>
+            <p class="text-xl text-gray-600 mb-8">基于 Cloudflare 的稳定DNS解析服务，支持多种记录类型</p>
+            <div class="flex justify-center space-x-4">
+                <a href="/login" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">登录管理</a>
+                <a href="/pricing" class="px-6 py-3 border-2 border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 font-medium">查看套餐</a>
+            </div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8 py-12">
+            <div class="text-center p-6 bg-white rounded-xl shadow-sm">
+                <div class="text-4xl mb-4">⚡</div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">快速部署</h3>
+                <p class="text-gray-600">一键创建子域名，即刻生效</p>
+            </div>
+            <div class="text-center p-6 bg-white rounded-xl shadow-sm">
+                <div class="text-4xl mb-4">🔒</div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">安全可靠</h3>
+                <p class="text-gray-600">Cloudflare 全球节点，DDoS防护</p>
+            </div>
+            <div class="text-center p-6 bg-white rounded-xl shadow-sm">
+                <div class="text-4xl mb-4">📊</div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">实时管理</h3>
+                <p class="text-gray-600">完整的域名管理后台</p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>`,
+  'login.html': `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 六趣DNS</title>
+    <link rel="stylesheet" href="/static/css/tailwind.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="/static/js/app.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-md">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold text-indigo-600">六趣DNS</h1>
+                <p class="text-gray-500 mt-2">登录您的账户</p>
+            </div>
+            <form x-data="{ account: '', password: '', error: '' }" @submit.prevent="login()">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">邮箱/用户名</label>
+                    <input type="text" x-model="account" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="请输入邮箱或用户名">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                    <input type="password" x-model="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="请输入密码">
+                </div>
+                <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                    {{ error }}
+                </div>
+                <button type="submit" class="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">登录</button>
+            </form>
+            <div class="mt-6 text-center">
+                <a href="/register" class="text-indigo-600 hover:text-indigo-700">还没有账户？注册</a>
+            </div>
         </div>
     </div>
 </body>
-</html>`;
+</html>`,
+  'register.html': `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - 六趣DNS</title>
+    <link rel="stylesheet" href="/static/css/tailwind.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="/static/js/app.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-md">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold text-indigo-600">六趣DNS</h1>
+                <p class="text-gray-500 mt-2">创建新账户</p>
+            </div>
+            <form x-data="{ username: '', email: '', password: '', confirmPassword: '', error: '' }" @submit.prevent="register()">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                    <input type="text" x-model="username" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="请输入用户名">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+                    <input type="email" x-model="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="请输入邮箱">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                    <input type="password" x-model="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="请输入密码">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
+                    <input type="password" x-model="confirmPassword" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="请再次输入密码">
+                </div>
+                <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                    {{ error }}
+                </div>
+                <button type="submit" class="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">注册</button>
+            </form>
+            <div class="mt-6 text-center">
+                <a href="/login" class="text-indigo-600 hover:text-indigo-700">已有账户？登录</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`,
+  'user/index.html': `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户中心 - 六趣DNS</title>
+    <link rel="stylesheet" href="/static/css/tailwind.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="/static/js/app.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm border-b" x-data="{ user: null }" x-init="checkAuth()">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-xl font-bold text-indigo-600">六趣DNS</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span x-text="user?.username" class="text-gray-700"></span>
+                    <button @click="logout()" class="text-red-500 hover:text-red-700 text-sm">退出</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="grid md:grid-cols-4 gap-8">
+            <div class="md:col-span-1">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">菜单</h2>
+                    <div class="space-y-2">
+                        <a href="/user" class="block px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg">我的域名</a>
+                        <a href="/user/domains" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">域名管理</a>
+                        <a href="/user/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">个人资料</a>
+                        <a href="/user/password" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">修改密码</a>
+                    </div>
+                </div>
+            </div>
+            <div class="md:col-span-3">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">我的域名</h2>
+                    <div x-data="loadSubdomains()" class="space-y-4">
+                        <template x-if="subdomains.length === 0">
+                            <div class="text-center py-12 text-gray-500">
+                                <div class="text-4xl mb-4">📭</div>
+                                <p>暂无域名，去购买一个吧！</p>
+                                <a href="/pricing" class="inline-block mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">购买域名</a>
+                            </div>
+                        </template>
+                        <template x-for="sub in subdomains" :key="sub.id">
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-medium text-gray-900" x-text="sub.full_name"></h3>
+                                        <p class="text-sm text-gray-500" x-text="'状态: ' + (sub.status === 1 ? '正常' : '已停用')"></p>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button @click="manageDomain(sub)" class="px-3 py-1 text-sm bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200">管理</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>`,
+  'admin/index.html': `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - 六趣DNS</title>
+    <link rel="stylesheet" href="/static/css/tailwind.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="/static/js/app.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm border-b" x-data="{ user: null }" x-init="checkAuth()">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/admin" class="text-xl font-bold text-indigo-600">六趣DNS管理后台</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span x-text="user?.username" class="text-gray-700"></span>
+                    <button @click="logout()" class="text-red-500 hover:text-red-700 text-sm">退出</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="grid md:grid-cols-4 gap-8">
+            <div class="md:col-span-1">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">管理菜单</h2>
+                    <div class="space-y-2">
+                        <a href="/admin" class="block px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg">仪表盘</a>
+                        <a href="/admin/users" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">用户管理</a>
+                        <a href="/admin/domains" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">域名管理</a>
+                        <a href="/admin/channels" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">DNS渠道</a>
+                        <a href="/admin/plans" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">套餐管理</a>
+                        <a href="/admin/orders" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">订单管理</a>
+                        <a href="/admin/settings" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">系统设置</a>
+                    </div>
+                </div>
+            </div>
+            <div class="md:col-span-3">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">仪表盘</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-indigo-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-indigo-600" x-data="{ count: 0 }" x-init="loadStats()">0</div>
+                            <div class="text-sm text-gray-600">用户总数</div>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-green-600">0</div>
+                            <div class="text-sm text-gray-600">域名总数</div>
+                        </div>
+                        <div class="bg-orange-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-orange-600">0</div>
+                            <div class="text-sm text-gray-600">今日注册</div>
+                        </div>
+                        <div class="bg-blue-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-blue-600">0</div>
+                            <div class="text-sm text-gray-600">系统余额</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>`,
+  'pricing.html': `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>套餐 - 六趣DNS</title>
+    <link rel="stylesheet" href="/static/css/tailwind.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="/static/js/app.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm border-b" x-data="{ user: null }" x-init="checkAuth()">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-xl font-bold text-indigo-600">六趣DNS</a>
+                    <div class="hidden md:flex ml-10 space-x-4">
+                        <a href="/" class="px-3 py-2 text-gray-700 hover:text-indigo-600">首页</a>
+                        <a href="/pricing" class="px-3 py-2 text-indigo-600">套餐</a>
+                        <a href="/whois" class="px-3 py-2 text-gray-700 hover:text-indigo-600">WHOIS</a>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-4">
+                    <template x-if="!user">
+                        <div class="space-x-2">
+                            <a href="/login" class="px-4 py-2 text-gray-700 hover:text-indigo-600">登录</a>
+                            <a href="/register" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">注册</a>
+                        </div>
+                    </template>
+                    <template x-if="user">
+                        <a href="/user" class="text-gray-700 hover:text-indigo-600" x-text="user.username"></a>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <main class="max-w-7xl mx-auto px-4 py-12">
+        <div class="text-center mb-12">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">选择套餐</h1>
+            <p class="text-gray-600">选择适合您的域名套餐</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div x-data="loadPlans()" class="space-y-4">
+                <template x-for="plan in plans" :key="plan.id">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-2" :class="plan.is_free ? 'border-gray-200' : 'border-indigo-500'">
+                        <div class="text-center mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900" x-text="plan.name"></h3>
+                            <div class="mt-2">
+                                <span class="text-3xl font-bold" x-text="plan.is_free ? '免费' : ('¥' + plan.price)"></span>
+                                <span class="text-gray-500 text-sm" x-text="plan.is_free ? '' : ('/' + plan.duration_days + '天')"></span>
+                            </div>
+                        </div>
+                        <ul class="space-y-2 mb-6">
+                            <li class="flex items-center text-gray-600">
+                                <span class="text-green-500 mr-2">✓</span>
+                                <span x-text="'最多 ' + plan.max_records + ' 条DNS记录'"></span>
+                            </li>
+                            <li class="flex items-center text-gray-600">
+                                <span class="text-green-500 mr-2">✓</span>
+                                <span x-text="'支持长度 ' + plan.min_length + '-' + plan.max_length + ' 位'"></span>
+                            </li>
+                        </ul>
+                        <button @click="buyPlan(plan)" class="w-full px-4 py-2 rounded-lg font-medium" :class="plan.is_free ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-indigo-600 text-white hover:bg-indigo-700'">
+                            <template x-if="plan.is_free">申请免费套餐</template>
+                            <template x-else>立即购买</template>
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </main>
+</body>
+</html>`,
+  'whois.html': `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WHOIS查询 - 六趣DNS</title>
+    <link rel="stylesheet" href="/static/css/tailwind.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="/static/js/app.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm border-b" x-data="{ user: null }" x-init="checkAuth()">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-xl font-bold text-indigo-600">六趣DNS</a>
+                    <div class="hidden md:flex ml-10 space-x-4">
+                        <a href="/" class="px-3 py-2 text-gray-700 hover:text-indigo-600">首页</a>
+                        <a href="/pricing" class="px-3 py-2 text-gray-700 hover:text-indigo-600">套餐</a>
+                        <a href="/whois" class="px-3 py-2 text-indigo-600">WHOIS</a>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-4">
+                    <template x-if="!user">
+                        <div class="space-x-2">
+                            <a href="/login" class="px-4 py-2 text-gray-700 hover:text-indigo-600">登录</a>
+                            <a href="/register" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">注册</a>
+                        </div>
+                    </template>
+                    <template x-if="user">
+                        <a href="/user" class="text-gray-700 hover:text-indigo-600" x-text="user.username"></a>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <main class="max-w-3xl mx-auto px-4 py-12">
+        <div class="bg-white rounded-xl shadow-sm p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">WHOIS查询</h1>
+                <p class="text-gray-500">查询域名的注册信息</p>
+            </div>
+            <form x-data="{ domain: '', result: null, loading: false }" @submit.prevent="queryWhois()">
+                <div class="flex space-x-4">
+                    <input type="text" x-model="domain" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="请输入域名，如 example.com">
+                    <button type="submit" :disabled="loading" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium disabled:opacity-50">查询</button>
+                </div>
+            </form>
+            <div x-if="result" class="mt-8 p-6 bg-gray-50 rounded-lg">
+                <pre class="whitespace-pre-wrap text-sm text-gray-700 font-mono" x-text="result.raw"></pre>
+            </div>
+        </div>
+    </main>
+</body>
+</html>`
+};
 
-  return baseHTML;
+/**
+ * 提供 HTML 页面
+ */
+async function serveHtmlPage(pageName: string): Promise<Response> {
+  const htmlContent = PAGES[pageName] || PAGES['index.html'];
+  
+  return new Response(htmlContent, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-cache',
+    },
+  });
 }
