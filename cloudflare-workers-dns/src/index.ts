@@ -273,7 +273,7 @@ const HTML_PAGES: Record<string, string> = `
 
 const APP_CSS = "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}.nav-active{color:#4f46e5;border-bottom:2px solid #4f46e5}.card{transition:transform .2s,box-shadow .2s}.card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}.table-row:hover{background-color:#f9fafb}.spinner{border:3px solid #e5e7eb;border-top:3px solid #4f46e5;border-radius:50%;width:24px;height:24px;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}";
 
-const APP_JS = "const API_BASE='';function getToken(){return localStorage.getItem('token')}function setToken(t){localStorage.setItem('token',t)}function removeToken(){localStorage.removeItem('token')}async function apiRequest(u,o){o=o||{};const t=getToken(),h={'Content-Type':'application/json',...o.headers};if(t)h.Authorization='Bearer '+t;const r=await fetch(API_BASE+u,{...o,headers:h}),d=await r.json();if(d.code===401){removeToken();window.location.href='/login';throw new Error('Not logged in')}if(d.code>=400)throw new Error(d.message||'Request failed');return d}function checkAuth(){return{user:null,async init(){const t=getToken();if(!t)return;try{const d=await apiRequest('/api/auth/me');this.user=d.data}catch(e){removeToken()}},async logout(){removeToken();window.location.href='/login'}}}function loginForm(){return{account:'',password:'',error:'',loading:false,async submit(){this.error='';this.loading=true;try{const d=await apiRequest('/api/auth/login',{method:'POST',body:JSON.stringify({account:this.account,password:this.password})});setToken(d.data.token);const isAdmin=d.data.user.role==='admin';window.location.href=isAdmin?'/admin':'/user'}catch(e){this.error=e.message}this.loading=false}}}function registerForm(){return{username:'',email:'',password:'',confirmPassword:'',error:'',loading:false,async submit(){this.error='';if(this.password!==this.confirmPassword){this.error='Passwords do not match';return}this.loading=true;try{const d=await apiRequest('/api/auth/register',{method:'POST',body:JSON.stringify({username:this.username,email:this.email,password:this.password})});setToken(d.data.token);window.location.href='/user'}catch(e){this.error=e.message}this.loading=false}}}function loadSubdomains(){return{subdomains:[],async init(){try{const d=await apiRequest('/api/user/domains');this.subdomains=d.data||[]}catch(e){console.error(e)}}}}function loadPlans(){return{plans:[],async init(){try{const d=await apiRequest('/api/plans');this.plans=d.data||[]}catch(e){console.error(e)}}}}function queryWhois(){return{domain:'',result:null,loading:false,async submit(){this.loading=true;try{const d=await apiRequest('/api/whois',{method:'POST',body:JSON.stringify({domain:this.domain})});this.result=d.data}catch(e){console.error(e)}this.loading=false}}}function loadStats(){return{stats:{users:0,domains:0,todayReg:0,balance:0},async init(){try{const d=await apiRequest('/api/admin/stats');if(d.data){this.stats.users=d.data.total_users||0;this.stats.domains=d.data.total_domains||0;this.stats.todayReg=d.data.today_new_users||0;this.stats.balance=d.data.total_revenue||0}}catch(e){console.error(e)}}}}function loadUsers(){return{users:[],loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/admin/users');this.users=d.data.users||[]}catch(e){console.error(e)}this.loading=false}}}function loadDomains(){return{domains:[],loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/admin/domains');this.domains=d.data.items||[]}catch(e){console.error(e)}this.loading=false}}}function loadChannels(){return{channels:[],loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/admin/channels');this.channels=d.data.items||[]}catch(e){console.error(e)}this.loading=false}}}function loadAdminPlans(){return{plans:[],loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/admin/plans');this.plans=d.data.items||[]}catch(e){console.error(e)}this.loading=false}}}function loadOrders(){return{orders:[],loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/admin/orders');this.orders=d.data.items||[]}catch(e){console.error(e)}this.loading=false}}}function loadSettings(){return{settings:{},loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/admin/settings');this.settings=d.data||{}}catch(e){console.error(e)}this.loading=false},async save(key,value){try{await apiRequest('/api/admin/settings',{method:'PUT',body:JSON.stringify({key,value})});this.settings[key]=value}catch(e){throw e}}}}function adminRouter(){return{currentRoute:'dashboard',init(){const path=window.location.pathname;if(path.startsWith('/admin/users'))this.currentRoute='users';else if(path.startsWith('/admin/domains'))this.currentRoute='domains';else if(path.startsWith('/admin/channels'))this.currentRoute='channels';else if(path.startsWith('/admin/plans'))this.currentRoute='plans';else if(path.startsWith('/admin/orders'))this.currentRoute='orders';else if(path.startsWith('/admin/settings'))this.currentRoute='settings';else this.currentRoute='dashboard'},navigate(route){this.currentRoute=route;window.history.pushState({},'',`/admin/${route==='dashboard'?'':route}`)}}}";
+const APP_JS = "const API_BASE='';function getToken(){return localStorage.getItem('token')}function setToken(t){localStorage.setItem('token',t)}function removeToken(){localStorage.removeItem('token')}async function apiRequest(u,o){o=o||{};const t=getToken(),h={'Content-Type':'application/json',...o.headers};if(t)h.Authorization='Bearer '+t;const r=await fetch(API_BASE+u,{...o,headers:h}),d=await r.json();if(d.code===401){removeToken();window.location.href='/login';throw new Error('Not logged in')}if(d.code>=400)throw new Error(d.message||'Request failed');return d}function checkAuth(){return{user:null,async init(){const t=getToken();if(!t)return;try{const d=await apiRequest('/api/auth/me');this.user=d.data}catch(e){removeToken()}},async logout(){removeToken();window.location.href='/login'}}}function loginForm(){return{account:'',password:'',error:'',loading:false,async submit(){this.error='';this.loading=true;try{const d=await apiRequest('/api/auth/login',{method:'POST',body:JSON.stringify({account:this.account,password:this.password})});setToken(d.data.token);const isAdmin=d.data.user.role==='admin';window.location.href=isAdmin?'/admin':'/user'}catch(e){this.error=e.message}this.loading=false}}}function registerForm(){return{username:'',email:'',password:'',confirmPassword:'',error:'',loading:false,async submit(){this.error='';if(this.password!==this.confirmPassword){this.error='Passwords do not match';return}this.loading=true;try{const d=await apiRequest('/api/auth/register',{method:'POST',body:JSON.stringify({username:this.username,email:this.email,password:this.password})});setToken(d.data.token);window.location.href='/user'}catch(e){this.error=e.message}this.loading=false}}}function loadSubdomains(){return{subdomains:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/user/domains');this.subdomains=d.data||[]}catch(e){this.error=e.message}this.loading=false}}}function loadPlans(){return{plans:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/plans');this.plans=d.data||[]}catch(e){this.error=e.message}this.loading=false}}}function queryWhois(){return{domain:'',result:null,loading:false,async submit(){this.loading=true;try{const d=await apiRequest('/api/whois',{method:'POST',body:JSON.stringify({domain:this.domain})});this.result=d.data}catch(e){console.error(e)}this.loading=false}}}function loadStats(){return{stats:{users:0,domains:0,todayReg:0,balance:0},loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/stats');if(d.data){this.stats.users=d.data.total_users||0;this.stats.domains=d.data.total_domains||0;this.stats.todayReg=d.data.today_new_users||0;this.stats.balance=d.data.total_revenue||0}}catch(e){this.error=e.message}this.loading=false}}}function adminUserManager(){return{users:[],loading:false,error:'',editingUser:null,showEditModal:false,async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/users');this.users=d.data.users||[]}catch(e){this.error=e.message}this.loading=false},async editUser(user){this.editingUser={...user};this.showEditModal=true},async saveUser(){try{await apiRequest('/api/admin/users/'+this.editingUser.id,{method:'PUT',body:JSON.stringify({status:this.editingUser.status,role:this.editingUser.role,balance:this.editingUser.balance,max_domains:this.editingUser.max_domains,points:this.editingUser.points})});await this.init();this.showEditModal=false;this.editingUser=null}catch(e){this.error=e.message}},async deleteUser(id){if(!confirm('确定要删除这个用户吗？'))return;try{await apiRequest('/api/admin/users/'+id,{method:'DELETE'});await this.init()}catch(e){this.error=e.message}},async toggleStatus(user){user.status=user.status===1?0:1;try{await apiRequest('/api/admin/users/'+user.id,{method:'PUT',body:JSON.stringify({status:user.status})});await this.init()}catch(e){this.error=e.message}}}}function adminDomainManager(){return{domains:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/domains');this.domains=d.data.items||[]}catch(e){this.error=e.message}this.loading=false},async toggleStatus(domain){domain.status=domain.status===1?0:1;try{await apiRequest('/api/admin/domains/'+domain.id,{method:'PUT',body:JSON.stringify({status:domain.status})});await this.init()}catch(e){this.error=e.message}}}}function adminChannelManager(){return{channels:[],loading:false,error:'',showAddModal:false,newChannel:{name:'',type:'cloudflare',status:1,config:''},async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/channels');this.channels=d.data.items||[]}catch(e){this.error=e.message}this.loading=false},async addChannel(){try{await apiRequest('/api/admin/channels',{method:'POST',body:JSON.stringify(this.newChannel)});await this.init();this.showAddModal=false;this.newChannel={name:'',type:'cloudflare',status:1,config:''}}catch(e){this.error=e.message}},async toggleStatus(channel){channel.status=channel.status===1?0:1;try{await apiRequest('/api/admin/channels/'+channel.id,{method:'PUT',body:JSON.stringify({status:channel.status})});await this.init()}catch(e){this.error=e.message}}}}function adminPlanManager(){return{plans:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/plans');this.plans=d.data.items||[]}catch(e){this.error=e.message}this.loading=false}}}function adminOrderManager(){return{orders:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/orders');this.orders=d.data.items||[]}catch(e){this.error=e.message}this.loading=false}}}function adminSettingsManager(){return{settings:{},loading:false,error:'',editingKey:'',editingValue:'',showEditModal:false,async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/settings');this.settings=d.data||{}}catch(e){this.error=e.message}this.loading=false},async editSetting(key,value){this.editingKey=key;this.editingValue=value;this.showEditModal=true},async saveSetting(){try{await apiRequest('/api/admin/settings',{method:'PUT',body:JSON.stringify({key:this.editingKey,value:this.editingValue})});this.settings[this.editingKey]=this.editingValue;this.showEditModal=false}catch(e){this.error=e.message}}}}function adminRouter(){return{currentRoute:'dashboard',init(){const path=window.location.pathname;if(path.startsWith('/admin/users'))this.currentRoute='users';else if(path.startsWith('/admin/domains'))this.currentRoute='domains';else if(path.startsWith('/admin/channels'))this.currentRoute='channels';else if(path.startsWith('/admin/plans'))this.currentRoute='plans';else if(path.startsWith('/admin/orders'))this.currentRoute='orders';else if(path.startsWith('/admin/settings'))this.currentRoute='settings';else this.currentRoute='dashboard'},navigate(route){this.currentRoute=route;window.history.pushState({},'','/admin/'+(route==='dashboard'?'':route))}}}function userRouter(){return{currentRoute:'dashboard',init(){const path=window.location.pathname;if(path.startsWith('/user/domains'))this.currentRoute='domains';else if(path.startsWith('/user/profile'))this.currentRoute='profile';else if(path.startsWith('/user/security'))this.currentRoute='security';else if(path.startsWith('/user/orders'))this.currentRoute='orders';else if(path.startsWith('/user/api'))this.currentRoute='api';else this.currentRoute='dashboard'},navigate(route){this.currentRoute=route;window.history.pushState({},'','/user/'+(route==='dashboard'?'':route))}}}function userProfileManager(){return{user:{},loading:false,error:'',newPassword:'',confirmPassword:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/auth/me');this.user=d.data}catch(e){this.error=e.message}this.loading=false},async changePassword(){if(this.newPassword!==this.confirmPassword){this.error='两次输入的密码不一致';return}try{await apiRequest('/api/auth/change-password',{method:'PUT',body:JSON.stringify({old_password:this.user.password||'',new_password:this.newPassword})});alert('密码修改成功');this.newPassword='';this.confirmPassword=''}catch(e){this.error=e.message}}}}function userDomainManager(){return{domains:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/user/domains');this.domains=d.data||[]}catch(e){this.error=e.message}this.loading=false}}}function userApiManager(){return{apiKey:'',apiSecret:'',loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/auth/me');this.apiKey=d.data.api_key||'';this.apiSecret=d.data.api_secret||''}catch(e){console.error(e)}this.loading=false},async generateKey(){try{await apiRequest('/api/user/api/generate',{method:'POST'});await this.init()}catch(e){alert(e.message)}}}}";
 
 const STATIC_FILES: Record<string, { content: string; contentType: string }> = {
   'css/style.css': {
@@ -606,42 +606,162 @@ const PAGES: Record<string, string> = {
         </div>
     </nav>
     <main class="max-w-7xl mx-auto px-4 py-8">
-        <div class="grid md:grid-cols-4 gap-8">
+        <div class="grid md:grid-cols-4 gap-8" x-data="userRouter()" x-init="init()">
             <div class="md:col-span-1">
                 <div class="bg-white rounded-xl shadow-sm p-6">
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">菜单</h2>
                     <div class="space-y-2">
-                        <a href="/user" class="block px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg">我的域名</a>
-                        <a href="/user/domains" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">域名管理</a>
-                        <a href="/user/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">个人资料</a>
-                        <a href="/user/password" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">修改密码</a>
+                        <button @click="navigate('dashboard')" class="w-full text-left px-4 py-2 rounded-lg transition-colors" :class="currentRoute === 'dashboard' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'">我的域名</button>
+                        <button @click="navigate('domains')" class="w-full text-left px-4 py-2 rounded-lg transition-colors" :class="currentRoute === 'domains' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'">域名管理</button>
+                        <button @click="navigate('profile')" class="w-full text-left px-4 py-2 rounded-lg transition-colors" :class="currentRoute === 'profile' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'">个人资料</button>
+                        <button @click="navigate('security')" class="w-full text-left px-4 py-2 rounded-lg transition-colors" :class="currentRoute === 'security' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'">修改密码</button>
+                        <button @click="navigate('orders')" class="w-full text-left px-4 py-2 rounded-lg transition-colors" :class="currentRoute === 'orders' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'">订单记录</button>
+                        <button @click="navigate('api')" class="w-full text-left px-4 py-2 rounded-lg transition-colors" :class="currentRoute === 'api' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'">API管理</button>
                     </div>
                 </div>
             </div>
             <div class="md:col-span-3">
-                <div class="bg-white rounded-xl shadow-sm p-6">
+                <div x-show="currentRoute === 'dashboard'" class="bg-white rounded-xl shadow-sm p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-6">我的域名</h2>
-                    <div x-data="loadSubdomains()" x-init="init()" class="space-y-4">
-                        <template x-if="subdomains.length === 0">
-                            <div class="text-center py-12 text-gray-500">
+                    <div x-data="userDomainManager()" x-init="init()">
+                        <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm" x-text="error"></div>
+                        <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
+                        <div x-show="!loading">
+                            <div x-if="domains.length === 0" class="text-center py-12 text-gray-500">
                                 <div class="text-4xl mb-4">📭</div>
                                 <p>暂无域名，去购买一个吧！</p>
                                 <a href="/pricing" class="inline-block mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">购买域名</a>
                             </div>
-                        </template>
-                        <template x-for="sub in subdomains" :key="sub.id">
-                            <div class="border border-gray-200 rounded-lg p-4">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <h3 class="font-medium text-gray-900" x-text="sub.full_name"></h3>
-                                        <p class="text-sm text-gray-500" x-text="'状态: ' + (sub.status === 1 ? '正常' : '已停用')"></p>
+                            <div x-else class="space-y-4">
+                                <template x-for="domain in domains" :key="domain.id">
+                                    <div class="border rounded-lg p-4">
+                                        <div class="flex justify-between items-center">
+                                            <div>
+                                                <h3 class="font-semibold" x-text="domain.name"></h3>
+                                                <p class="text-sm text-gray-500">状态: <span :class="domain.status === 1 ? 'text-green-600' : 'text-gray-600'" x-text="domain.status === 1 ? '正常' : '已禁用'"></span></p>
+                                            </div>
+                                            <div class="space-x-2">
+                                                <button class="px-3 py-1 text-sm bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200">编辑</button>
+                                                <button class="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">删除</button>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="flex space-x-2">
-                                        <button @click="manageDomain(sub)" class="px-3 py-1 text-sm bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200">管理</button>
-                                    </div>
-                                </div>
+                                </template>
                             </div>
-                        </template>
+                        </div>
+                    </div>
+                </div>
+                <div x-show="currentRoute === 'domains'" class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">域名管理</h2>
+                    <div x-data="userDomainManager()" x-init="init()">
+                        <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm" x-text="error"></div>
+                        <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
+                        <div x-show="!loading">
+                            <div x-if="domains.length === 0" class="text-center py-12 text-gray-500">
+                                <div class="text-4xl mb-4">📭</div>
+                                <p>暂无域名，去购买一个吧！</p>
+                                <a href="/pricing" class="inline-block mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">购买域名</a>
+                            </div>
+                            <div x-else class="space-y-4">
+                                <template x-for="domain in domains" :key="domain.id">
+                                    <div class="border rounded-lg p-4">
+                                        <div class="flex justify-between items-center">
+                                            <div>
+                                                <h3 class="font-semibold" x-text="domain.name"></h3>
+                                                <p class="text-sm text-gray-500">DNS记录数: <span x-text="domain.record_count || 0"></span></p>
+                                            </div>
+                                            <div class="space-x-2">
+                                                <button class="px-3 py-1 text-sm bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200">管理DNS</button>
+                                                <button class="px-3 py-1 text-sm bg-green-100 text-green-600 rounded-lg hover:bg-green-200">添加记录</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div x-show="currentRoute === 'profile'" class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">个人资料</h2>
+                    <div x-data="userProfileManager()" x-init="init()">
+                        <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm" x-text="error"></div>
+                        <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
+                        <div x-show="!loading" class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <span class="text-gray-700">用户名</span>
+                                <span x-text="user.username || '-'"></span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <span class="text-gray-700">邮箱</span>
+                                <span x-text="user.email || '-'"></span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <span class="text-gray-700">余额</span>
+                                <span class="font-medium" x-text="user.balance === -1 ? '无限' : ('¥' + user.balance)"></span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <span class="text-gray-700">积分</span>
+                                <span x-text="user.points || 0"></span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <span class="text-gray-700">最大域名数</span>
+                                <span x-text="user.max_domains || 5"></span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <span class="text-gray-700">注册时间</span>
+                                <span x-text="user.created_at || '-'"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div x-show="currentRoute === 'security'" class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">修改密码</h2>
+                    <div x-data="userProfileManager()" x-init="init()">
+                        <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm" x-text="error"></div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">原密码</label>
+                                <input type="password" x-model="user.password" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="请输入原密码">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">新密码</label>
+                                <input type="password" x-model="newPassword" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="请输入新密码">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">确认密码</label>
+                                <input type="password" x-model="confirmPassword" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="请再次输入新密码">
+                            </div>
+                            <button @click="changePassword()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">修改密码</button>
+                        </div>
+                    </div>
+                </div>
+                <div x-show="currentRoute === 'orders'" class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">订单记录</h2>
+                    <div class="text-center py-12 text-gray-500">
+                        <div class="text-4xl mb-4">📋</div>
+                        <p>暂无订单记录</p>
+                    </div>
+                </div>
+                <div x-show="currentRoute === 'api'" class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900">API管理</h2>
+                        <button @click="generateKey()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">生成新密钥</button>
+                    </div>
+                    <div x-data="userApiManager()" x-init="init()">
+                        <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
+                        <div x-show="!loading" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">API Key</label>
+                                <input type="text" x-model="apiKey" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 font-mono">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">API Secret</label>
+                                <input type="text" x-model="apiSecret" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 font-mono">
+                            </div>
+                            <div class="p-4 bg-blue-50 rounded-lg">
+                                <p class="text-sm text-blue-700">请保存好您的API密钥，刷新页面后将无法再次查看API Secret。</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -693,30 +813,36 @@ const PAGES: Record<string, string> = {
             <div class="md:col-span-3">
                 <div x-show="currentRoute === 'dashboard'" class="bg-white rounded-xl shadow-sm p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-6">仪表盘</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" x-data="loadStats()" x-init="init()">
-                        <div class="bg-indigo-50 rounded-lg p-4 text-center">
-                            <div class="text-2xl font-bold text-indigo-600" x-text="stats.users">0</div>
-                            <div class="text-sm text-gray-600">用户总数</div>
-                        </div>
-                        <div class="bg-green-50 rounded-lg p-4 text-center">
-                            <div class="text-2xl font-bold text-green-600" x-text="stats.domains">0</div>
-                            <div class="text-sm text-gray-600">域名总数</div>
-                        </div>
-                        <div class="bg-orange-50 rounded-lg p-4 text-center">
-                            <div class="text-2xl font-bold text-orange-600" x-text="stats.todayReg">0</div>
-                            <div class="text-sm text-gray-600">今日注册</div>
-                        </div>
-                        <div class="bg-blue-50 rounded-lg p-4 text-center">
-                            <div class="text-2xl font-bold text-blue-600" x-text="stats.balance">0</div>
-                            <div class="text-sm text-gray-600">系统余额</div>
+                    <div x-data="loadStats()" x-init="init()">
+                        <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
+                        <div x-show="!loading" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="bg-indigo-50 rounded-lg p-4 text-center">
+                                <div class="text-2xl font-bold text-indigo-600" x-text="stats.users">0</div>
+                                <div class="text-sm text-gray-600">用户总数</div>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-4 text-center">
+                                <div class="text-2xl font-bold text-green-600" x-text="stats.domains">0</div>
+                                <div class="text-sm text-gray-600">域名总数</div>
+                            </div>
+                            <div class="bg-orange-50 rounded-lg p-4 text-center">
+                                <div class="text-2xl font-bold text-orange-600" x-text="stats.todayReg">0</div>
+                                <div class="text-sm text-gray-600">今日注册</div>
+                            </div>
+                            <div class="bg-blue-50 rounded-lg p-4 text-center">
+                                <div class="text-2xl font-bold text-blue-600" x-text="stats.balance">0</div>
+                                <div class="text-sm text-gray-600">系统余额</div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div x-show="currentRoute === 'users'" class="bg-white rounded-xl shadow-sm p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-6">用户管理</h2>
-                    <div x-data="loadUsers()" x-init="init()">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900">用户管理</h2>
+                    </div>
+                    <div x-data="adminUserManager()" x-init="init()">
+                        <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm" x-text="error"></div>
                         <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
-                        <table class="w-full">
+                        <table x-show="!loading" class="w-full">
                             <thead>
                                 <tr class="border-b">
                                     <th class="text-left py-3 px-4 font-medium text-gray-600">ID</th>
@@ -725,6 +851,7 @@ const PAGES: Record<string, string> = {
                                     <th class="text-left py-3 px-4 font-medium text-gray-600">角色</th>
                                     <th class="text-left py-3 px-4 font-medium text-gray-600">状态</th>
                                     <th class="text-left py-3 px-4 font-medium text-gray-600">创建时间</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">操作</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -737,23 +864,69 @@ const PAGES: Record<string, string> = {
                                             <span class="px-2 py-1 rounded text-xs" :class="user.role === 'admin' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'" x-text="user.role === 'admin' ? '管理员' : '用户'"></span>
                                         </td>
                                         <td class="py-3 px-4">
-                                            <span class="px-2 py-1 rounded text-xs" :class="user.status === 1 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'" x-text="user.status === 1 ? '正常' : '封禁'"></span>
+                                            <button @click="toggleStatus(user)" class="px-2 py-1 rounded text-xs" :class="user.status === 1 ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-red-100 text-red-600 hover:bg-red-200'" x-text="user.status === 1 ? '正常' : '封禁'"></button>
                                         </td>
                                         <td class="py-3 px-4 text-sm text-gray-500" x-text="user.created_at"></td>
+                                        <td class="py-3 px-4">
+                                            <button @click="editUser(user)" class="text-blue-600 hover:text-blue-700 mr-2">编辑</button>
+                                            <button @click="deleteUser(user.id)" class="text-red-600 hover:text-red-700">删除</button>
+                                        </td>
                                     </tr>
                                 </template>
-                                <tr x-if="!loading && users.length === 0">
-                                    <td colspan="6" class="py-8 text-center text-gray-500">暂无数据</td>
+                                <tr x-if="users.length === 0">
+                                    <td colspan="7" class="py-8 text-center text-gray-500">暂无数据</td>
                                 </tr>
                             </tbody>
                         </table>
+                        <div x-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div class="bg-white rounded-xl p-6 w-full max-w-md">
+                                <h3 class="text-lg font-semibold mb-4">编辑用户</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">用户名</label>
+                                        <input type="text" x-model="editingUser.username" disabled class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">角色</label>
+                                        <select x-model="editingUser.role" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                            <option value="user">用户</option>
+                                            <option value="admin">管理员</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">状态</label>
+                                        <select x-model="editingUser.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                            <option :value="1">正常</option>
+                                            <option :value="0">封禁</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">余额</label>
+                                        <input type="number" x-model="editingUser.balance" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">最大域名数</label>
+                                        <input type="number" x-model="editingUser.max_domains" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">积分</label>
+                                        <input type="number" x-model="editingUser.points" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                </div>
+                                <div class="flex justify-end space-x-4 mt-6">
+                                    <button @click="showEditModal=false" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">取消</button>
+                                    <button @click="saveUser()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">保存</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div x-show="currentRoute === 'domains'" class="bg-white rounded-xl shadow-sm p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-6">域名管理</h2>
-                    <div x-data="loadDomains()" x-init="init()">
+                    <div x-data="adminDomainManager()" x-init="init()">
+                        <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm" x-text="error"></div>
                         <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
-                        <table class="w-full">
+                        <table x-show="!loading" class="w-full">
                             <thead>
                                 <tr class="border-b">
                                     <th class="text-left py-3 px-4 font-medium text-gray-600">ID</th>
@@ -770,12 +943,12 @@ const PAGES: Record<string, string> = {
                                         <td class="py-3 px-4 font-medium" x-text="domain.name"></td>
                                         <td class="py-3 px-4" x-text="domain.dns_channel?.name || '-'"></td>
                                         <td class="py-3 px-4">
-                                            <span class="px-2 py-1 rounded text-xs" :class="domain.status === 1 ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'" x-text="domain.status === 1 ? '启用' : '禁用'"></span>
+                                            <button @click="toggleStatus(domain)" class="px-2 py-1 rounded text-xs" :class="domain.status === 1 ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'" x-text="domain.status === 1 ? '启用' : '禁用'"></button>
                                         </td>
                                         <td class="py-3 px-4 text-sm text-gray-500" x-text="domain.created_at"></td>
                                     </tr>
                                 </template>
-                                <tr x-if="!loading && domains.length === 0">
+                                <tr x-if="domains.length === 0">
                                     <td colspan="5" class="py-8 text-center text-gray-500">暂无数据</td>
                                 </tr>
                             </tbody>
@@ -783,10 +956,14 @@ const PAGES: Record<string, string> = {
                     </div>
                 </div>
                 <div x-show="currentRoute === 'channels'" class="bg-white rounded-xl shadow-sm p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-6">DNS渠道管理</h2>
-                    <div x-data="loadChannels()" x-init="init()">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900">DNS渠道管理</h2>
+                        <button @click="showAddModal=true" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">添加渠道</button>
+                    </div>
+                    <div x-data="adminChannelManager()" x-init="init()">
+                        <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm" x-text="error"></div>
                         <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
-                        <table class="w-full">
+                        <table x-show="!loading" class="w-full">
                             <thead>
                                 <tr class="border-b">
                                     <th class="text-left py-3 px-4 font-medium text-gray-600">ID</th>
@@ -794,6 +971,7 @@ const PAGES: Record<string, string> = {
                                     <th class="text-left py-3 px-4 font-medium text-gray-600">类型</th>
                                     <th class="text-left py-3 px-4 font-medium text-gray-600">状态</th>
                                     <th class="text-left py-3 px-4 font-medium text-gray-600">创建时间</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">操作</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -803,23 +981,50 @@ const PAGES: Record<string, string> = {
                                         <td class="py-3 px-4 font-medium" x-text="channel.name"></td>
                                         <td class="py-3 px-4" x-text="channel.type || '-'"></td>
                                         <td class="py-3 px-4">
-                                            <span class="px-2 py-1 rounded text-xs" :class="channel.status === 1 ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'" x-text="channel.status === 1 ? '启用' : '禁用'"></span>
+                                            <button @click="toggleStatus(channel)" class="px-2 py-1 rounded text-xs" :class="channel.status === 1 ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'" x-text="channel.status === 1 ? '启用' : '禁用'"></button>
                                         </td>
                                         <td class="py-3 px-4 text-sm text-gray-500" x-text="channel.created_at"></td>
+                                        <td class="py-3 px-4">
+                                            <button @click="editChannel(channel)" class="text-blue-600 hover:text-blue-700">编辑</button>
+                                        </td>
                                     </tr>
                                 </template>
-                                <tr x-if="!loading && channels.length === 0">
-                                    <td colspan="5" class="py-8 text-center text-gray-500">暂无数据</td>
+                                <tr x-if="channels.length === 0">
+                                    <td colspan="6" class="py-8 text-center text-gray-500">暂无数据</td>
                                 </tr>
                             </tbody>
                         </table>
+                        <div x-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div class="bg-white rounded-xl p-6 w-full max-w-md">
+                                <h3 class="text-lg font-semibold mb-4">添加DNS渠道</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">渠道名称</label>
+                                        <input type="text" x-model="newChannel.name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="输入渠道名称">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">类型</label>
+                                        <select x-model="newChannel.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                            <option value="cloudflare">Cloudflare</option>
+                                            <option value="godaddy">GoDaddy</option>
+                                            <option value="aliyun">阿里云</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="flex justify-end space-x-4 mt-6">
+                                    <button @click="showAddModal=false" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">取消</button>
+                                    <button @click="addChannel()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">添加</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div x-show="currentRoute === 'plans'" class="bg-white rounded-xl shadow-sm p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-6">套餐管理</h2>
-                    <div x-data="loadAdminPlans()" x-init="init()">
+                    <div x-data="adminPlanManager()" x-init="init()">
+                        <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm" x-text="error"></div>
                         <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
-                        <div class="grid md:grid-cols-3 gap-4">
+                        <div x-show="!loading" class="grid md:grid-cols-3 gap-4">
                             <template x-for="plan in plans" :key="plan.id">
                                 <div class="border rounded-lg p-4">
                                     <h3 class="font-semibold text-gray-900" x-text="plan.name"></h3>
@@ -831,15 +1036,16 @@ const PAGES: Record<string, string> = {
                                     <div class="mt-1 text-sm text-gray-600">长度限制: <span x-text="plan.min_length + '-' + plan.max_length"></span></div>
                                 </div>
                             </template>
-                            <div x-if="!loading && plans.length === 0" class="col-span-3 text-center py-8 text-gray-500">暂无数据</div>
+                            <div x-if="plans.length === 0" class="col-span-3 text-center py-8 text-gray-500">暂无数据</div>
                         </div>
                     </div>
                 </div>
                 <div x-show="currentRoute === 'orders'" class="bg-white rounded-xl shadow-sm p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-6">订单管理</h2>
-                    <div x-data="loadOrders()" x-init="init()">
+                    <div x-data="adminOrderManager()" x-init="init()">
+                        <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm" x-text="error"></div>
                         <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
-                        <table class="w-full">
+                        <table x-show="!loading" class="w-full">
                             <thead>
                                 <tr class="border-b">
                                     <th class="text-left py-3 px-4 font-medium text-gray-600">ID</th>
@@ -863,7 +1069,7 @@ const PAGES: Record<string, string> = {
                                         <td class="py-3 px-4 text-sm text-gray-500" x-text="order.created_at"></td>
                                     </tr>
                                 </template>
-                                <tr x-if="!loading && orders.length === 0">
+                                <tr x-if="orders.length === 0">
                                     <td colspan="6" class="py-8 text-center text-gray-500">暂无数据</td>
                                 </tr>
                             </tbody>
@@ -872,28 +1078,54 @@ const PAGES: Record<string, string> = {
                 </div>
                 <div x-show="currentRoute === 'settings'" class="bg-white rounded-xl shadow-sm p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-6">系统设置</h2>
-                    <div x-data="loadSettings()" x-init="init()">
+                    <div x-data="adminSettingsManager()" x-init="init()">
+                        <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm" x-text="error"></div>
                         <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
-                        <div x-if="!loading" class="space-y-4">
+                        <div x-show="!loading" class="space-y-4">
                             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                 <span class="text-gray-700">站点名称</span>
-                                <span x-text="settings.site_name || '-'"></span>
+                                <div class="flex items-center space-x-4">
+                                    <span x-text="settings.site_name || '-'"></span>
+                                    <button @click="editSetting('site_name', settings.site_name || '')" class="text-blue-600 hover:text-blue-700 text-sm">编辑</button>
+                                </div>
                             </div>
                             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                 <span class="text-gray-700">站点描述</span>
-                                <span x-text="settings.site_description || '-'"></span>
+                                <div class="flex items-center space-x-4">
+                                    <span x-text="settings.site_description || '-'"></span>
+                                    <button @click="editSetting('site_description', settings.site_description || '')" class="text-blue-600 hover:text-blue-700 text-sm">编辑</button>
+                                </div>
                             </div>
                             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                 <span class="text-gray-700">注册开关</span>
-                                <span :class="settings.register_enabled === '1' ? 'text-green-600' : 'text-red-600'" x-text="settings.register_enabled === '1' ? '开启' : '关闭'"></span>
+                                <div class="flex items-center space-x-4">
+                                    <span :class="settings.register_enabled === '1' ? 'text-green-600' : 'text-red-600'" x-text="settings.register_enabled === '1' ? '开启' : '关闭'"></span>
+                                    <button @click="editSetting('register_enabled', settings.register_enabled || '1')" class="text-blue-600 hover:text-blue-700 text-sm">编辑</button>
+                                </div>
                             </div>
                             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                 <span class="text-gray-700">默认最大域名数</span>
-                                <span x-text="settings.default_max_domains || '5'"></span>
+                                <div class="flex items-center space-x-4">
+                                    <span x-text="settings.default_max_domains || '5'"></span>
+                                    <button @click="editSetting('default_max_domains', settings.default_max_domains || '5')" class="text-blue-600 hover:text-blue-700 text-sm">编辑</button>
+                                </div>
                             </div>
                             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                 <span class="text-gray-700">版本</span>
                                 <span x-text="settings.version || '-'"></span>
+                            </div>
+                        </div>
+                        <div x-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div class="bg-white rounded-xl p-6 w-full max-w-md">
+                                <h3 class="text-lg font-semibold mb-4">编辑设置</h3>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" x-text="editingKey"></label>
+                                    <input type="text" x-model="editingValue" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                </div>
+                                <div class="flex justify-end space-x-4 mt-6">
+                                    <button @click="showEditModal=false" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">取消</button>
+                                    <button @click="saveSetting()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">保存</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -902,7 +1134,7 @@ const PAGES: Record<string, string> = {
         </div>
     </main>
 </body>
-</html>`,
+</html>`,,
   'pricing.html': `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
