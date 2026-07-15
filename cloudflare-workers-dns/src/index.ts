@@ -1134,7 +1134,7 @@ const PAGES: Record<string, string> = {
         </div>
     </main>
 </body>
-</html>`,,
+</html>`,
   'pricing.html': `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
