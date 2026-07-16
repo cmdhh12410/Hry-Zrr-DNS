@@ -5,6 +5,7 @@
 import { Router } from './router';
 import { rateLimiter } from './middleware/rate-limiter';
 import { errorResponse, successResponse } from './utils/response';
+import { setEnv } from './utils/jwt';
 import type { Env } from './utils/types';
 
 // 导入路由模块
@@ -57,6 +58,7 @@ registerPageRoutes(router);
 // 全局错误处理
 async function handleRequest(request: Request, env: Env): Promise<Response> {
   try {
+    setEnv(env);
     return await router.handle(request, env);
   } catch (error: unknown) {
     console.error('Unhandled error:', error);
@@ -657,11 +659,11 @@ const PAGES: Record<string, string> = {
                 <!-- Profile -->
                 <div x-show="currentRoute === 'profile'">
                     <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div x-data="userProfile()" x-init="init()">
                         <div class="flex justify-between items-center mb-6">
                             <h2 class="text-xl font-semibold text-gray-900">个人资料</h2>
-                            <button @click="$refs.profile.toggleEdit()" class="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg" x-text="$refs.profile.editMode ? '取消' : '编辑'">编辑</button>
+                            <button @click="toggleEdit()" class="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg" x-text="editMode ? '取消' : '编辑'">编辑</button>
                         </div>
-                        <div x-data="userProfile()" x-ref="profile" x-init="init()">
                             <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm" x-text="error"></div>
                             <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
                             <div x-show="!loading" class="space-y-4">
@@ -743,11 +745,11 @@ const PAGES: Record<string, string> = {
                 <!-- API Management -->
                 <div x-show="currentRoute === 'api'">
                     <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div x-data="userApi()" x-init="init()">
                         <div class="flex justify-between items-center mb-6">
                             <h2 class="text-xl font-semibold text-gray-900">API管理</h2>
-                            <button @click="$refs.api.generate()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">生成新密钥</button>
+                            <button @click="generate()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">生成新密钥</button>
                         </div>
-                        <div x-data="userApi()" x-ref="api" x-init="init()">
                             <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
                             <div x-show="!loading" class="space-y-4 max-w-lg">
                                 <div>
@@ -989,11 +991,11 @@ const PAGES: Record<string, string> = {
                 <!-- Channels -->
                 <div x-show="currentRoute === 'channels'">
                     <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div x-data="adminChannels()" x-init="init()">
                         <div class="flex justify-between items-center mb-6">
                             <h2 class="text-xl font-semibold text-gray-900">DNS渠道管理</h2>
-                            <button @click="$refs.channels.openAdd()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">添加渠道</button>
+                            <button @click="openAdd()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">添加渠道</button>
                         </div>
-                        <div x-data="adminChannels()" x-ref="channels" x-init="init()">
                             <div x-if="error" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm" x-text="error"></div>
                             <div x-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
                             <div x-show="!loading">

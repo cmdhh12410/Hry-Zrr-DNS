@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
+import type { Env } from './types';
 
 export interface JwtPayload {
   user_id: number;
@@ -8,21 +9,29 @@ export interface JwtPayload {
   exp?: number;
 }
 
+// 全局缓存 env，让没有 env 参数的函数也能访问
+let _env: Env | null = null;
+
+export function setEnv(env: Env) {
+  _env = env;
+}
+
 const getSecret = () => {
-  // 使用环境变量或默认值
-  const secret = typeof JWT_SECRET !== 'undefined' ? JWT_SECRET : 'jwt-secret-key-change-me';
+  const secret = _env?.JWT_SECRET || 'jwt-secret-key-change-me';
   return new TextEncoder().encode(secret);
 };
 
-const EXPIRES_IN = typeof JWT_ACCESS_TOKEN_EXPIRES !== 'undefined'
-  ? parseInt(JWT_ACCESS_TOKEN_EXPIRES)
-  : 86400;
+const getExpiresIn = () => {
+  const val = _env?.JWT_ACCESS_TOKEN_EXPIRES;
+  return val ? parseInt(val) : 86400;
+};
 
 export async function createToken(payload: Omit<JwtPayload, 'exp'>): Promise<string> {
+  const expiresIn = getExpiresIn();
   const token = await new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime(`${EXPIRES_IN}s`)
+    .setExpirationTime(`${expiresIn}s`)
     .sign(getSecret());
   return token;
 }
