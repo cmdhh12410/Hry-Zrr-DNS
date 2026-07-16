@@ -140,12 +140,13 @@ Write-Ok "Environment check passed"
 # ============================================================
 Write-Step "Install dependencies"
 
-if (-not (Test-Path "node_modules")) {
-    npm install
-    Write-Ok "Dependencies installed"
-} else {
-    Write-Ok "Dependencies already exist, skip"
+# Always run npm install to ensure all deps are present
+npm install
+if ($LASTEXITCODE -ne 0) {
+    Write-Fail "npm install failed"
+    exit 1
 }
+Write-Ok "Dependencies installed"
 
 # ============================================================
 # Step 3: Create Cloudflare Resources
