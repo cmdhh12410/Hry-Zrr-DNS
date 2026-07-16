@@ -141,7 +141,7 @@ Write-Ok "Environment check passed"
 Write-Step "Install dependencies"
 
 # Always run npm install to ensure all deps are present
-npm install
+npm install --legacy-peer-deps
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "npm install failed"
     exit 1
