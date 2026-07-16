@@ -273,7 +273,7 @@ const HTML_PAGES: Record<string, string> = `
 
 const APP_CSS = "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}.nav-active{color:#4f46e5;border-bottom:2px solid #4f46e5}.card{transition:transform .2s,box-shadow .2s}.card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}.table-row:hover{background-color:#f9fafb}.spinner{border:3px solid #e5e7eb;border-top:3px solid #4f46e5;border-radius:50%;width:24px;height:24px;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}";
 
-const APP_JS = "const API_BASE='';function getToken(){return localStorage.getItem('token')}function setToken(t){localStorage.setItem('token',t)}function removeToken(){localStorage.removeItem('token')}async function apiRequest(u,o){o=o||{};const t=getToken(),h={'Content-Type':'application/json',...o.headers};if(t)h.Authorization='Bearer '+t;const r=await fetch(API_BASE+u,{...o,headers:h}),d=await r.json();if(d.code===401){removeToken();window.location.href='/login';throw new Error('Not logged in')}if(d.code>=400)throw new Error(d.message||'Request failed');return d}function checkAuth(){return{user:null,async init(){const t=getToken();if(!t)return;try{const d=await apiRequest('/api/auth/me');this.user=d.data}catch(e){removeToken()}},async logout(){removeToken();window.location.href='/login'}}}function loginForm(){return{account:'',password:'',error:'',loading:false,async submit(){this.error='';this.loading=true;try{const d=await apiRequest('/api/auth/login',{method:'POST',body:JSON.stringify({account:this.account,password:this.password})});setToken(d.data.token);const isAdmin=d.data.user.role==='admin';window.location.href=isAdmin?'/admin':'/user'}catch(e){this.error=e.message}this.loading=false}}}function registerForm(){return{username:'',email:'',password:'',confirmPassword:'',error:'',loading:false,async submit(){this.error='';if(this.password!==this.confirmPassword){this.error='Passwords do not match';return}this.loading=true;try{const d=await apiRequest('/api/auth/register',{method:'POST',body:JSON.stringify({username:this.username,email:this.email,password:this.password})});setToken(d.data.token);window.location.href='/user'}catch(e){this.error=e.message}this.loading=false}}}function loadSubdomains(){return{subdomains:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/user/domains');this.subdomains=d.data||[]}catch(e){this.error=e.message}this.loading=false}}}function loadPlans(){return{plans:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/plans');this.plans=d.data||[]}catch(e){this.error=e.message}this.loading=false}}}function queryWhois(){return{domain:'',result:null,loading:false,async submit(){this.loading=true;try{const d=await apiRequest('/api/whois',{method:'POST',body:JSON.stringify({domain:this.domain})});this.result=d.data}catch(e){console.error(e)}this.loading=false}}}function loadStats(){return{stats:{users:0,domains:0,todayReg:0,balance:0},loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/stats');if(d.data){this.stats.users=d.data.total_users||0;this.stats.domains=d.data.total_domains||0;this.stats.todayReg=d.data.today_new_users||0;this.stats.balance=d.data.total_revenue||0}}catch(e){this.error=e.message}this.loading=false}}}function adminUserManager(){return{users:[],loading:false,error:'',editingUser:null,showEditModal:false,async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/users');this.users=d.data.users||[]}catch(e){this.error=e.message}this.loading=false},async editUser(user){this.editingUser={...user};this.showEditModal=true},async saveUser(){try{await apiRequest('/api/admin/users/'+this.editingUser.id,{method:'PUT',body:JSON.stringify({status:this.editingUser.status,role:this.editingUser.role,balance:this.editingUser.balance,max_domains:this.editingUser.max_domains,points:this.editingUser.points})});await this.init();this.showEditModal=false;this.editingUser=null}catch(e){this.error=e.message}},async deleteUser(id){if(!confirm('确定要删除这个用户吗？'))return;try{await apiRequest('/api/admin/users/'+id,{method:'DELETE'});await this.init()}catch(e){this.error=e.message}},async toggleStatus(user){user.status=user.status===1?0:1;try{await apiRequest('/api/admin/users/'+user.id,{method:'PUT',body:JSON.stringify({status:user.status})});await this.init()}catch(e){this.error=e.message}}}}function adminDomainManager(){return{domains:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/domains');this.domains=d.data.items||[]}catch(e){this.error=e.message}this.loading=false},async toggleStatus(domain){domain.status=domain.status===1?0:1;try{await apiRequest('/api/admin/domains/'+domain.id,{method:'PUT',body:JSON.stringify({status:domain.status})});await this.init()}catch(e){this.error=e.message}}}}function adminChannelManager(){return{channels:[],loading:false,error:'',showAddModal:false,newChannel:{name:'',type:'cloudflare',status:1,config:''},async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/channels');this.channels=d.data.items||[]}catch(e){this.error=e.message}this.loading=false},async addChannel(){try{await apiRequest('/api/admin/channels',{method:'POST',body:JSON.stringify(this.newChannel)});await this.init();this.showAddModal=false;this.newChannel={name:'',type:'cloudflare',status:1,config:''}}catch(e){this.error=e.message}},async toggleStatus(channel){channel.status=channel.status===1?0:1;try{await apiRequest('/api/admin/channels/'+channel.id,{method:'PUT',body:JSON.stringify({status:channel.status})});await this.init()}catch(e){this.error=e.message}}}}function adminPlanManager(){return{plans:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/plans');this.plans=d.data.items||[]}catch(e){this.error=e.message}this.loading=false}}}function adminOrderManager(){return{orders:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/orders');this.orders=d.data.items||[]}catch(e){this.error=e.message}this.loading=false}}}function adminSettingsManager(){return{settings:{},loading:false,error:'',editingKey:'',editingValue:'',showEditModal:false,async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/settings');this.settings=d.data||{}}catch(e){this.error=e.message}this.loading=false},async editSetting(key,value){this.editingKey=key;this.editingValue=value;this.showEditModal=true},async saveSetting(){try{await apiRequest('/api/admin/settings',{method:'PUT',body:JSON.stringify({key:this.editingKey,value:this.editingValue})});this.settings[this.editingKey]=this.editingValue;this.showEditModal=false}catch(e){this.error=e.message}}}}function adminRouter(){return{currentRoute:'dashboard',init(){const path=window.location.pathname;if(path.startsWith('/admin/users'))this.currentRoute='users';else if(path.startsWith('/admin/domains'))this.currentRoute='domains';else if(path.startsWith('/admin/channels'))this.currentRoute='channels';else if(path.startsWith('/admin/plans'))this.currentRoute='plans';else if(path.startsWith('/admin/orders'))this.currentRoute='orders';else if(path.startsWith('/admin/settings'))this.currentRoute='settings';else this.currentRoute='dashboard'},navigate(route){this.currentRoute=route;window.history.pushState({},'','/admin/'+(route==='dashboard'?'':route))}}}function userRouter(){return{currentRoute:'dashboard',init(){const path=window.location.pathname;if(path.startsWith('/user/domains'))this.currentRoute='domains';else if(path.startsWith('/user/profile'))this.currentRoute='profile';else if(path.startsWith('/user/security'))this.currentRoute='security';else if(path.startsWith('/user/orders'))this.currentRoute='orders';else if(path.startsWith('/user/api'))this.currentRoute='api';else this.currentRoute='dashboard'},navigate(route){this.currentRoute=route;window.history.pushState({},'','/user/'+(route==='dashboard'?'':route))}}}function userProfileManager(){return{user:{},loading:false,error:'',newPassword:'',confirmPassword:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/auth/me');this.user=d.data}catch(e){this.error=e.message}this.loading=false},async changePassword(){if(this.newPassword!==this.confirmPassword){this.error='两次输入的密码不一致';return}try{await apiRequest('/api/auth/change-password',{method:'PUT',body:JSON.stringify({old_password:this.user.password||'',new_password:this.newPassword})});alert('密码修改成功');this.newPassword='';this.confirmPassword=''}catch(e){this.error=e.message}}}}function userDomainManager(){return{domains:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/user/domains');this.domains=d.data||[]}catch(e){this.error=e.message}this.loading=false}}}function userApiManager(){return{apiKey:'',apiSecret:'',loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/auth/me');this.apiKey=d.data.api_key||'';this.apiSecret=d.data.api_secret||''}catch(e){console.error(e)}this.loading=false},async generateKey(){try{await apiRequest('/api/user/api/generate',{method:'POST'});await this.init()}catch(e){alert(e.message)}}}}";
+const APP_JS = "const API_BASE='';function getToken(){return localStorage.getItem('token')}function setToken(t){localStorage.setItem('token',t)}function removeToken(){localStorage.removeItem('token')}async function apiRequest(u,o){o=o||{};const t=getToken(),h={'Content-Type':'application/json',...o.headers};if(t)h.Authorization='Bearer '+t;const r=await fetch(API_BASE+u,{...o,headers:h}),d=await r.json();if(d.code===401){removeToken();window.location.href='/login';throw new Error('Not logged in')}if(d.code>=400)throw new Error(d.message||'Request failed');return d}function checkAuth(){return{user:null,async init(){const t=getToken();if(!t)return;try{const d=await apiRequest('/api/auth/me');this.user=d.data}catch(e){removeToken()}},async logout(){removeToken();window.location.href='/login'}}}function loginForm(){return{account:'',password:'',error:'',loading:false,async submit(){this.error='';this.loading=true;try{const d=await apiRequest('/api/auth/login',{method:'POST',body:JSON.stringify({account:this.account,password:this.password})});setToken(d.data.token);const isAdmin=d.data.user.role==='admin';window.location.href=isAdmin?'/admin':'/user'}catch(e){this.error=e.message}this.loading=false}}}function registerForm(){return{username:'',email:'',password:'',confirmPassword:'',error:'',loading:false,async submit(){this.error='';if(this.password!==this.confirmPassword){this.error='Passwords do not match';return}this.loading=true;try{const d=await apiRequest('/api/auth/register',{method:'POST',body:JSON.stringify({username:this.username,email:this.email,password:this.password})});setToken(d.data.token);window.location.href='/user'}catch(e){this.error=e.message}this.loading=false}}}function loadSubdomains(){return{subdomains:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/user/domains');this.subdomains=d.data||[]}catch(e){this.error=e.message}this.loading=false}}}function loadPlans(){return{plans:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/plans');this.plans=d.data||[]}catch(e){this.error=e.message}this.loading=false}}}function queryWhois(){return{domain:'',result:null,loading:false,async submit(){this.loading=true;try{const d=await apiRequest('/api/whois',{method:'POST',body:JSON.stringify({domain:this.domain})});this.result=d.data}catch(e){console.error(e)}this.loading=false}}}function loadStats(){return{stats:{users:0,domains:0,todayReg:0,balance:0},loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/stats');if(d.data){this.stats.users=d.data.total_users||0;this.stats.domains=d.data.total_domains||0;this.stats.todayReg=d.data.today_new_users||0;this.stats.balance=d.data.total_revenue||0}}catch(e){this.error=e.message}this.loading=false}}}function adminUserManager(){return{users:[],loading:false,error:'',editingUser:null,showEditModal:false,async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/users');this.users=d.data.users||[]}catch(e){this.error=e.message}this.loading=false},async editUser(user){this.editingUser={...user};this.showEditModal=true},async saveUser(){try{await apiRequest('/api/admin/users/'+this.editingUser.id,{method:'PUT',body:JSON.stringify({status:this.editingUser.status,role:this.editingUser.role,balance:this.editingUser.balance,max_domains:this.editingUser.max_domains,points:this.editingUser.points})});await this.init();this.showEditModal=false;this.editingUser=null}catch(e){this.error=e.message}},async deleteUser(id){if(!confirm('确定要删除这个用户吗？'))return;try{await apiRequest('/api/admin/users/'+id,{method:'DELETE'});await this.init()}catch(e){this.error=e.message}},async toggleStatus(user){user.status=user.status===1?0:1;try{await apiRequest('/api/admin/users/'+user.id,{method:'PUT',body:JSON.stringify({status:user.status})});await this.init()}catch(e){this.error=e.message}}}}function adminDomainManager(){return{domains:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/domains');this.domains=d.data.items||[]}catch(e){this.error=e.message}this.loading=false},async toggleStatus(domain){domain.status=domain.status===1?0:1;try{await apiRequest('/api/admin/domains/'+domain.id,{method:'PUT',body:JSON.stringify({status:domain.status})});await this.init()}catch(e){this.error=e.message}}}}function adminChannelManager(){return{channels:[],loading:false,error:'',showAddModal:false,showEditModal:false,newChannel:{name:'',provider_type:'cloudflare',credentials:{}},editingChannel:null,async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/channels');this.channels=d.data||[]}catch(e){this.error=e.message}this.loading=false},async addChannel(){if(!this.newChannel.name){this.error='请输入渠道名称';return}try{await apiRequest('/api/admin/channels',{method:'POST',body:JSON.stringify({name:this.newChannel.name,provider_type:this.newChannel.provider_type,credentials:this.newChannel.credentials||{token:'placeholder'}})});await this.init();this.showAddModal=false;this.newChannel={name:'',provider_type:'cloudflare',credentials:{}}}catch(e){this.error=e.message}},async editChannel(channel){this.editingChannel={...channel};this.showEditModal=true},async saveChannel(){try{await apiRequest('/api/admin/channels/'+this.editingChannel.id,{method:'PUT',body:JSON.stringify({name:this.editingChannel.name,status:this.editingChannel.status,remark:this.editingChannel.remark})});await this.init();this.showEditModal=false;this.editingChannel=null}catch(e){this.error=e.message}},async toggleStatus(channel){channel.status=channel.status===1?0:1;try{await apiRequest('/api/admin/channels/'+channel.id,{method:'PUT',body:JSON.stringify({status:channel.status})});await this.init()}catch(e){this.error=e.message}}}}function adminPlanManager(){return{plans:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/plans');this.plans=d.data||[]}catch(e){this.error=e.message}this.loading=false}}}function adminOrderManager(){return{orders:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/orders');this.orders=d.data.orders||[]}catch(e){this.error=e.message}this.loading=false}}}function adminSettingsManager(){return{settings:{},loading:false,error:'',editingKey:'',editingValue:'',showEditModal:false,async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/admin/settings');this.settings=d.data||{}}catch(e){this.error=e.message}this.loading=false},async editSetting(key,value){this.editingKey=key;this.editingValue=value;this.showEditModal=true},async saveSetting(){try{await apiRequest('/api/admin/settings',{method:'PUT',body:JSON.stringify({key:this.editingKey,value:this.editingValue})});this.settings[this.editingKey]=this.editingValue;this.showEditModal=false}catch(e){this.error=e.message}}}}function adminRouter(){return{currentRoute:'dashboard',init(){const path=window.location.pathname;if(path.startsWith('/admin/users'))this.currentRoute='users';else if(path.startsWith('/admin/domains'))this.currentRoute='domains';else if(path.startsWith('/admin/channels'))this.currentRoute='channels';else if(path.startsWith('/admin/plans'))this.currentRoute='plans';else if(path.startsWith('/admin/orders'))this.currentRoute='orders';else if(path.startsWith('/admin/settings'))this.currentRoute='settings';else this.currentRoute='dashboard'},navigate(route){this.currentRoute=route;window.history.pushState({},'','/admin/'+(route==='dashboard'?'':route))}}}function userRouter(){return{currentRoute:'dashboard',init(){const path=window.location.pathname;if(path.startsWith('/user/domains'))this.currentRoute='domains';else if(path.startsWith('/user/profile'))this.currentRoute='profile';else if(path.startsWith('/user/security'))this.currentRoute='security';else if(path.startsWith('/user/orders'))this.currentRoute='orders';else if(path.startsWith('/user/api'))this.currentRoute='api';else this.currentRoute='dashboard'},navigate(route){this.currentRoute=route;window.history.pushState({},'','/user/'+(route==='dashboard'?'':route))}}}function userProfileManager(){return{user:{},loading:false,error:'',newPassword:'',confirmPassword:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/auth/me');this.user=d.data}catch(e){this.error=e.message}this.loading=false},async changePassword(){if(this.newPassword!==this.confirmPassword){this.error='两次输入的密码不一致';return}try{await apiRequest('/api/auth/change-password',{method:'PUT',body:JSON.stringify({old_password:this.user.password||'',new_password:this.newPassword})});alert('密码修改成功');this.newPassword='';this.confirmPassword=''}catch(e){this.error=e.message}}}}function userDomainManager(){return{domains:[],loading:false,error:'',async init(){this.loading=true;this.error='';try{const d=await apiRequest('/api/user/domains');this.domains=d.data||[]}catch(e){this.error=e.message}this.loading=false}}}function userApiManager(){return{apiKey:'',apiSecret:'',loading:false,async init(){this.loading=true;try{const d=await apiRequest('/api/auth/me');this.apiKey=d.data.api_key||'';this.apiSecret=d.data.api_secret||''}catch(e){console.error(e)}this.loading=false},async generateKey(){try{await apiRequest('/api/user/api/generate',{method:'POST'});await this.init()}catch(e){alert(e.message)}}}}";
 
 const STATIC_FILES: Record<string, { content: string; contentType: string }> = {
   'css/style.css': {
@@ -331,81 +331,37 @@ function registerPageRoutes(router: Router) {
     return serveHtmlPage('whois.html');
   });
 
-  // 用户页面
+  // 用户页面 (SPA - all routes serve the same page)
   router.get('/user', async () => {
     return serveHtmlPage('user/index.html');
   });
 
-  router.get('/user/domains', async () => {
-    return serveHtmlPage('user/domains.html');
-  });
-
-  router.get('/user/domains/new', async () => {
-    return serveHtmlPage('user/domains/new.html');
-  });
-
-  router.get('/user/domains/:id', async () => {
-    return serveHtmlPage('user/domain_detail.html');
-  });
-
-  router.get('/user/profile', async () => {
-    return serveHtmlPage('user/profile.html');
-  });
-
-  router.get('/user/security', async () => {
-    return serveHtmlPage('user/security.html');
-  });
-
-  router.get('/user/orders', async () => {
-    return serveHtmlPage('user/orders.html');
-  });
-
-  router.get('/user/transfers', async () => {
-    return serveHtmlPage('user/transfers.html');
-  });
-
-  router.get('/user/api', async () => {
-    return serveHtmlPage('user/api.html');
-  });
-
-  router.get('/user/announcements', async () => {
-    return serveHtmlPage('user/announcements.html');
-  });
-
-  router.get('/user/redeem', async () => {
-    return serveHtmlPage('user/redeem.html');
-  });
-
-  router.get('/user/signin', async () => {
-    return serveHtmlPage('user/signin.html');
+  router.get('/user/*', async () => {
+    return serveHtmlPage('user/index.html');
   });
 
   // 工单
   router.get('/tickets', async () => {
-    return serveHtmlPage('tickets.html');
+    return serveHtmlPage('index.html');
   });
 
-  router.get('/tickets/new', async () => {
-    return serveHtmlPage('ticket_new.html');
-  });
-
-  router.get('/tickets/:id', async () => {
-    return serveHtmlPage('ticket_detail.html');
+  router.get('/tickets/*', async () => {
+    return serveHtmlPage('index.html');
   });
 
   // 积分
   router.get('/points', async () => {
-    return serveHtmlPage('points.html');
+    return serveHtmlPage('index.html');
   });
 
   // 邀请
   router.get('/invite', async () => {
-    return serveHtmlPage('invite.html');
+    return serveHtmlPage('index.html');
   });
 
   // 免费套餐申请
   router.get('/my-applications', async () => {
-    return serveHtmlPage('my_applications.html');
+    return serveHtmlPage('index.html');
   });
 
   // 管理后台
@@ -979,7 +935,7 @@ const PAGES: Record<string, string> = {
                                     <tr class="border-b hover:bg-gray-50">
                                         <td class="py-3 px-4" x-text="channel.id"></td>
                                         <td class="py-3 px-4 font-medium" x-text="channel.name"></td>
-                                        <td class="py-3 px-4" x-text="channel.type || '-'"></td>
+                                        <td class="py-3 px-4" x-text="channel.provider_type || channel.provider_name || '-'"></td>
                                         <td class="py-3 px-4">
                                             <button @click="toggleStatus(channel)" class="px-2 py-1 rounded text-xs" :class="channel.status === 1 ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'" x-text="channel.status === 1 ? '启用' : '禁用'"></button>
                                         </td>
@@ -1004,16 +960,51 @@ const PAGES: Record<string, string> = {
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium mb-1">类型</label>
-                                        <select x-model="newChannel.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                        <select x-model="newChannel.provider_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                                             <option value="cloudflare">Cloudflare</option>
-                                            <option value="godaddy">GoDaddy</option>
                                             <option value="aliyun">阿里云</option>
+                                            <option value="dnspod">DNSPod</option>
+                                            <option value="godaddy">GoDaddy</option>
+                                            <option value="namecom">Name.com</option>
+                                            <option value="namesilo">NameSilo</option>
+                                            <option value="namecheap">NameCheap</option>
                                         </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">凭据 (JSON格式)</label>
+                                        <textarea x-model="newChannel.credentials" class="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="3" placeholder='{"token":"your-api-token"}'></textarea>
+                                        <p class="text-xs text-gray-500 mt-1">不同渠道需要不同凭据，Cloudflare需要token</p>
                                     </div>
                                 </div>
                                 <div class="flex justify-end space-x-4 mt-6">
                                     <button @click="showAddModal=false" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">取消</button>
                                     <button @click="addChannel()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">添加</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div x-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div class="bg-white rounded-xl p-6 w-full max-w-md">
+                                <h3 class="text-lg font-semibold mb-4">编辑渠道</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">渠道名称</label>
+                                        <input type="text" x-model="editingChannel.name" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">备注</label>
+                                        <input type="text" x-model="editingChannel.remark" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">状态</label>
+                                        <select x-model="editingChannel.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                            <option :value="1">启用</option>
+                                            <option :value="0">禁用</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="flex justify-end space-x-4 mt-6">
+                                    <button @click="showEditModal=false" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">取消</button>
+                                    <button @click="saveChannel()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">保存</button>
                                 </div>
                             </div>
                         </div>
